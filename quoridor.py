@@ -1,122 +1,138 @@
-import numpy as np
-import pygame
-import time
+import sys
 
-class Player:
-    def __init__(self, x, y, num_walls=10):
-        self.x = x
-        self.y = y
-        self.walls = num_walls
+BOARD_SIZE = 9
 
-    def get_position(self):
-        return [self.x, self.y]
+class Quoridor:
+    def __init__(self):
+        self.players = {'A': [0, BOARD_SIZE // 2], 'B': [BOARD_SIZE - 1, BOARD_SIZE // 2]}
+        self.turn = 'A'
+        self.h_walls = set()
+        self.v_walls = set()
+        self.walls_remaining = {'A': 10, 'B': 10}
 
-    def use_wall(self):
-        if self.walls > 0:
-            self.walls -= 1
-            return True
-        else:
+    def print_board(self):
+        # Use Unicode box characters for better visuals
+        print("\n   " + " ".join(str(i) for i in range(BOARD_SIZE)))
+        for r in range(BOARD_SIZE):
+            # Row of squares and vertical walls
+            row_str = f"{r:2d} "
+            for c in range(BOARD_SIZE):
+                # Square content
+                if [r, c] == self.players['A']:
+                    row_str += "A"
+                elif [r, c] == self.players['B']:
+                    row_str += "B"
+                else:
+                    row_str += "."
+
+                # Draw vertical wall to the right if present
+                if (r, c) in self.v_walls or (r - 1, c) in self.v_walls:
+                    row_str += "│"  # continuous vertical
+                else:
+                    row_str += " "
+            print(row_str)
+
+            # Draw horizontal walls between this row and the next
+            if r < BOARD_SIZE - 1:
+                wall_row = "   "
+                for c in range(BOARD_SIZE):
+                    if (r, c) in self.h_walls:
+                        wall_row += "──"
+                    else:
+                        wall_row += "  "
+                print(wall_row)
+
+        print(f"\nPlayer {self.turn}'s turn | Walls left: A={self.walls_remaining['A']}  B={self.walls_remaining['B']}\n")
+
+    def move_pawn(self, direction):
+        dr, dc = {'up': (-1, 0), 'down': (1, 0), 'left': (0, -1), 'right': (0, 1)}.get(direction, (0, 0))
+        r, c = self.players[self.turn]
+        nr, nc = r + dr, c + dc
+
+        if not (0 <= nr < BOARD_SIZE and 0 <= nc < BOARD_SIZE):
+            print("❌ Move out of bounds.")
+            return False
+        if [nr, nc] == self.players['A'] or [nr, nc] == self.players['B']:
+            print("❌ That square is occupied.")
             return False
 
-    
-class Grid:
-    def __init__(self, size=9):
-        self.size = size
-        self.pawns = np.zeros((size, size))
+        self.players[self.turn] = [nr, nc]
 
-        self.horz_walls = np.zeros((size-1, size))
-        self.vert_walls = np.zeros((size, size-1))
+        if (self.turn == 'A' and nr == BOARD_SIZE - 1) or (self.turn == 'B' and nr == 0):
+            self.print_board()
+            print(f"🎉 Player {self.turn} wins!")
+            sys.exit(0)
 
-    def place_wall(self, pos, orient):
-
-        if orient=='H':
-            
-            if self.horz_walls[pos[0], pos[1]] == 0 and self.horz_walls[pos[0], pos[1]+1] == 0: 
-                temp_walls = self.horz_walls.copy()
-                temp_walls[pos[0], pos[1]:pos[1]+1] = 1
-
-                if self.valid_path(temp_walls, self.pawns):
-                    self.horz_walls = temp_walls
-                    return True
-                
-            return False
-                
-        elif orient=='V':
-                
-            if self.vert_walls[pos[0], pos[1]] == 0 and self.vert_walls[pos[0]+1, pos[1]] == 0: 
-                temp_walls = self.vert_walls.copy()
-                temp_walls[pos[0]:pos[0]+1, pos[1]] = 1
-
-                if self.valid_path(temp_walls, self.pawns):
-                    self.vert_walls = temp_walls
-                    return True
-                
-            return False
-        
-        return False
-
-    # check whether there's a valid path for both pawns to reach the other side
-    def valid_path(self, walls, pawns):
+        self.turn = 'B' if self.turn == 'A' else 'A'
         return True
 
+    def place_wall(self, wall_type, r, c):
+        if self.walls_remaining[self.turn] <= 0:
+            print("❌ No walls remaining.")
+            return False
 
-class QuoridorGame: 
-    def __init__(self, grid_size=9):
-        self.gridSize = grid_size
+        if wall_type == 'h':
+            if not (0 <= r < BOARD_SIZE - 1 and 0 <= c < BOARD_SIZE - 2):
+                print("❌ Invalid horizontal wall position.")
+                return False
+            if ((r, c) in self.h_walls or (r, c + 1) in self.h_walls):
+                print("❌ Overlapping wall.")
+                return False
+            self.h_walls.add((r, c))
+            self.h_walls.add((r, c + 1))
 
-        self.grid = Grid(size=self.gridSize)
-        self.player_1 = Player(self.gridSize//2, self.gridSize-1)
-        self.player_2 = Player(self.gridSize//2, 0)
+        elif wall_type == 'v':
+            if not (0 <= r < BOARD_SIZE - 2 and 0 <= c < BOARD_SIZE - 1):
+                print("❌ Invalid vertical wall position.")
+                return False
+            if ((r, c) in self.v_walls or (r + 1, c) in self.v_walls):
+                print("❌ Overlapping wall.")
+                return False
+            self.v_walls.add((r, c))
+            self.v_walls.add((r + 1, c))
+        else:
+            print("❌ Invalid wall type. Use 'h' or 'v'.")
+            return False
 
-        self.cellSize = 40
-        self.screenSize = self.gridSize * self.cellSize
-        self.fps = 60
+        self.walls_remaining[self.turn] -= 1
+        self.turn = 'B' if self.turn == 'A' else 'A'
+        return True
 
-        self.black = (0, 0, 0)
-        self.white = (255, 255, 255)
+    def play(self):
+        print("Welcome to Quoridor!")
+        print("Moves: up/down/left/right | Walls: w h/v r c (e.g. 'w h 2 3')")
+        while True:
+            self.print_board()
+            move = input("Enter move: ").strip().lower().split()
 
-        self.screen = None
-        self.clock = None
-        self.sleeptime = 0.1
+            if len(move) == 1:
+                if move[0] in ['up', 'down', 'left', 'right']:
+                    self.move_pawn(move[0])
+                else:
+                    print("❌ Invalid command.")
+            elif len(move) == 4 and move[0] == 'w':
+                _, wall_type, r, c = move
+                try:
+                    r, c = int(r), int(c)
+                except ValueError:
+                    print("❌ Invalid coordinates.")
+                    continue
+                self.place_wall(wall_type, r, c)
+            else:
+                print("❌ Invalid input. Try again.")
 
-        pygame.init()
-        self.screen = pygame.display.set_mode((self.screenSize, self.screenSize))
-        pygame.display.set_caption("Shape Placement Grid")
-        self.clock = pygame.time.Clock()
-
-        self._refresh()
-
-    def _drawGrid(self, screen):
-        for x in range(0, self.screenSize, self.cellSize):
-            for y in range(0, self.screenSize, self.cellSize):
-                rect = pygame.Rect(x, y, self.cellSize, self.cellSize)
-                pygame.draw.rect(screen, self.black, rect, 1)
-
-    def _refresh(self):
-        self.screen.fill(self.white)
-        self._drawGrid(self.screen)
-
-        pygame.display.flip()
-        self.clock.tick(self.fps)
-        time.sleep(self.sleeptime)
-
-    def _loop_GUI(self):
-
-        ## Main Loop for the GUI
-        running = True
-        while running:
-            self.screen.fill(self.white)
-            self._drawGrid(self.screen)
-
-            pygame.display.flip()
-            self.clock.tick(self.fps)
-
-        pygame.quit()
-
-    def _main(self):
-        pass
 
 if __name__ == "__main__":
-    game = QuoridorGame()
-    game._loop_GUI()
+    game = Quoridor()
+    game.play()
 
+
+
+
+
+
+
+
+
+# AI-provided very rough draft
+# need to make it functional and refactor to be well written
