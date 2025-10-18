@@ -1,138 +1,166 @@
-import sys
+import numpy as np
+import pygame
+import time
 
-BOARD_SIZE = 9
+from player import *
 
 class Quoridor:
-    def __init__(self):
-        self.players = {'A': [0, BOARD_SIZE // 2], 'B': [BOARD_SIZE - 1, BOARD_SIZE // 2]}
-        self.turn = 'A'
-        self.h_walls = set()
-        self.v_walls = set()
-        self.walls_remaining = {'A': 10, 'B': 10}
+    def __init__(self, GUI=True, render_delay_sec=0.1, gs=9):
 
-    def print_board(self):
-        # Use Unicode box characters for better visuals
-        print("\n   " + " ".join(str(i) for i in range(BOARD_SIZE)))
-        for r in range(BOARD_SIZE):
-            # Row of squares and vertical walls
-            row_str = f"{r:2d} "
-            for c in range(BOARD_SIZE):
-                # Square content
-                if [r, c] == self.players['A']:
-                    row_str += "A"
-                elif [r, c] == self.players['B']:
-                    row_str += "B"
-                else:
-                    row_str += "."
+        # Constants
+        self.gridSize = gs
+        self.cellSize = 40
+        self.screenSize = self.gridSize * self.cellSize
+        self.fps = 60
+        self.sleeptime = render_delay_sec
 
-                # Draw vertical wall to the right if present
-                if (r, c) in self.v_walls or (r - 1, c) in self.v_walls:
-                    row_str += "│"  # continuous vertical
-                else:
-                    row_str += " "
-            print(row_str)
+        # Basic color definitions
+        self.black = (0, 0, 0)
+        self.gray = (241, 241, 241)
+        self.white = (255, 255, 255)
 
-            # Draw horizontal walls between this row and the next
-            if r < BOARD_SIZE - 1:
-                wall_row = "   "
-                for c in range(BOARD_SIZE):
-                    if (r, c) in self.h_walls:
-                        wall_row += "──"
-                    else:
-                        wall_row += "  "
-                print(wall_row)
+        # Color palette for shapes
+        self.colors = ['#504136', '#F7C59F']  # Taupe, Peach
 
-        print(f"\nPlayer {self.turn}'s turn | Walls left: A={self.walls_remaining['A']}  B={self.walls_remaining['B']}\n")
+        # Mapping of color indices to color names (for debugging purposes)
+        self.colorIdxToName = {0: "Taupe", 1: "Peach"}
 
-    def move_pawn(self, direction):
-        dr, dc = {'up': (-1, 0), 'down': (1, 0), 'left': (0, -1), 'right': (0, 1)}.get(direction, (0, 0))
-        r, c = self.players[self.turn]
-        nr, nc = r + dr, c + dc
+        # Global variables (now instance attributes)
+        self.screen = None
+        self.clock = None
+        self.grid = np.full((self.gridSize, self.gridSize), -1)
+        self.currentShapeIndex = 0
+        self.currentColorIndex = 0
+        self.shapePos = [0, 0]
+        self.placedShapes = []
+        self.done = False
 
-        if not (0 <= nr < BOARD_SIZE and 0 <= nc < BOARD_SIZE):
-            print("❌ Move out of bounds.")
-            return False
-        if [nr, nc] == self.players['A'] or [nr, nc] == self.players['B']:
-            print("❌ That square is occupied.")
-            return False
+        self.player1 = Player(self.gridSize // 2, self.gridSize-1, self.colors[0], self)
+        self.player2 = Player(self.gridSize // 2, 0, self.colors[1], self)
 
-        self.players[self.turn] = [nr, nc]
+        # Initialize the graphical interface (if enabled)
+        if GUI:
+            pygame.init()
+            self.screenSize = self.gridSize * self.cellSize
+            self.screen = pygame.display.set_mode((self.screenSize, self.screenSize))
+            pygame.display.set_caption("Shape Placement Grid")
+            self.clock = pygame.time.Clock()
 
-        if (self.turn == 'A' and nr == BOARD_SIZE - 1) or (self.turn == 'B' and nr == 0):
-            self.print_board()
-            print(f"🎉 Player {self.turn} wins!")
-            sys.exit(0)
+            self._refresh()
 
-        self.turn = 'B' if self.turn == 'A' else 'A'
-        return True
+    def get_pixels_from_coords(self, x, y):
+        x_pixels = int(x * self.cellSize + self.cellSize / 2)
+        y_pixels = int(y * self.cellSize + self.cellSize / 2)
+        return x_pixels, y_pixels
 
-    def place_wall(self, wall_type, r, c):
-        if self.walls_remaining[self.turn] <= 0:
-            print("❌ No walls remaining.")
-            return False
+    def _drawGrid(self, screen):
+        for x in range(0, self.screenSize, self.cellSize):
+            for y in range(0, self.screenSize, self.cellSize):
+                rect = pygame.Rect(x, y, self.cellSize, self.cellSize)
+                pygame.draw.rect(screen, self.white, rect, 2)
 
-        if wall_type == 'h':
-            if not (0 <= r < BOARD_SIZE - 1 and 0 <= c < BOARD_SIZE - 2):
-                print("❌ Invalid horizontal wall position.")
-                return False
-            if ((r, c) in self.h_walls or (r, c + 1) in self.h_walls):
-                print("❌ Overlapping wall.")
-                return False
-            self.h_walls.add((r, c))
-            self.h_walls.add((r, c + 1))
+    def _refresh(self):
+        self.screen.fill(self.gray)
+        self._drawGrid(self.screen)
 
-        elif wall_type == 'v':
-            if not (0 <= r < BOARD_SIZE - 2 and 0 <= c < BOARD_SIZE - 1):
-                print("❌ Invalid vertical wall position.")
-                return False
-            if ((r, c) in self.v_walls or (r + 1, c) in self.v_walls):
-                print("❌ Overlapping wall.")
-                return False
-            self.v_walls.add((r, c))
-            self.v_walls.add((r + 1, c))
-        else:
-            print("❌ Invalid wall type. Use 'h' or 'v'.")
-            return False
+        # Draw the current state of the grid
+        self.player1._drawPawn(self.screen)
+        self.player2._drawPawn(self.screen)
 
-        self.walls_remaining[self.turn] -= 1
-        self.turn = 'B' if self.turn == 'A' else 'A'
-        return True
+        pygame.display.flip()
+        self.clock.tick(self.fps)
+        time.sleep(self.sleeptime)  
 
-    def play(self):
-        print("Welcome to Quoridor!")
-        print("Moves: up/down/left/right | Walls: w h/v r c (e.g. 'w h 2 3')")
-        while True:
-            self.print_board()
-            move = input("Enter move: ").strip().lower().split()
+    def _loop_gui(self):
+        ## Main Loop for the GUI
+        running = True
+        mode = None
+        active_player = self.player1
 
-            if len(move) == 1:
-                if move[0] in ['up', 'down', 'left', 'right']:
-                    self.move_pawn(move[0])
-                else:
-                    print("❌ Invalid command.")
-            elif len(move) == 4 and move[0] == 'w':
-                _, wall_type, r, c = move
-                try:
-                    r, c = int(r), int(c)
-                except ValueError:
-                    print("❌ Invalid coordinates.")
-                    continue
-                self.place_wall(wall_type, r, c)
-            else:
-                print("❌ Invalid input. Try again.")
+        while running:
+            self.screen.fill(self.gray)
+            self._drawGrid(self.screen)
 
+            self.player1._drawPawn(self.screen)
+            self.player2._drawPawn(self.screen)
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+
+                elif event.type == pygame.KEYDOWN:
+                    # step 1: choose an action
+                    if mode is None:
+                        if event.key == pygame.K_p:
+                            mode = "move_pawn"
+                            print("Pawn move mode: press an arrow key to move.")
+                        elif event.key == pygame.K_f:
+                            mode = "place_fence"
+                            print("Fence placement mode: press arrow to choose direction.")
+                    
+                    # step 2: act based on current mode
+                    elif mode == "move_pawn":
+                        if event.key == pygame.K_w:
+                            if active_player._canMove(0, -1):
+                                active_player._movePawn(0, -1)
+                                print("Pawn moved up.")
+                                active_player = self.player2 if active_player==self.player1 else self.player1
+                                mode = None  # reset
+                            else:
+                                print("Cannot move there.")
+                            
+                        elif event.key == pygame.K_s:
+                            if active_player._canMove(0, 1):
+                                active_player._movePawn(0, 1)
+                                print("Pawn moved down.")
+                                active_player = self.player2 if active_player==self.player1 else self.player1
+                                mode = None  # reset
+                            else:
+                                print("Cannot move there.")
+
+                        elif event.key == pygame.K_a:
+                            if active_player._canMove(-1, 0):
+                                active_player._movePawn(-1, 0)
+                                print("Pawn moved left.")
+                                active_player = self.player2 if active_player==self.player1 else self.player1
+                                mode = None  # reset
+                            else:
+                                print("Cannot move there.")
+
+                        elif event.key == pygame.K_d:
+                            if active_player._canMove(1, 0):
+                                active_player._movePawn(1, 0)
+                                print("Pawn moved right.")
+                                active_player = self.player2 if active_player==self.player1 else self.player1
+                                mode = None  # reset
+                            else:
+                                print("Cannot move there.")
+
+                        else:
+                            print("Cancelled pawn move.")
+                            mode = None
+
+                    elif mode == "place_fence":
+                        if event.key == pygame.K_h:
+                            print("Placed horizontal fence.")
+                            mode = None
+                        elif event.key == pygame.K_v:
+                            print("Placed vertical fence.")
+                            mode = None
+                        elif event.key == pygame.K_ESCAPE:
+                            print("Canceled fence placement.")
+                            mode = None
+
+            pygame.display.flip()
+            self.clock.tick(self.fps)
+
+        pygame.quit()
+
+    def _main(self):
+        ## Allows manual control over the environment.
+        self._loop_gui()
 
 if __name__ == "__main__":
-    game = Quoridor()
-    game.play()
-
-
-
-
-
-
-
-
-
-# AI-provided very rough draft
-# need to make it functional and refactor to be well written
+    # printControls() and main() now encapsulated in the class:
+    game = Quoridor(True, render_delay_sec=0.1, gs=9)
+    game._main()
