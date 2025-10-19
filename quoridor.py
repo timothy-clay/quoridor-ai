@@ -3,6 +3,8 @@ import pygame
 import time
 
 from player import *
+from grid import *
+from fence import *
 
 class Quoridor:
     def __init__(self, GUI=True, render_delay_sec=0.1, gs=9):
@@ -35,6 +37,8 @@ class Quoridor:
         self.placedShapes = []
         self.done = False
 
+        self.grid = Grid(self.gridSize)
+
         self.player1 = Player(self.gridSize // 2, self.gridSize-1, self.colors[0], self)
         self.player2 = Player(self.gridSize // 2, 0, self.colors[1], self)
 
@@ -48,9 +52,18 @@ class Quoridor:
 
             self._refresh()
 
-    def get_pixels_from_coords(self, x, y):
+    def getPawnPixels(self, x, y):
         x_pixels = int(x * self.cellSize + self.cellSize / 2)
         y_pixels = int(y * self.cellSize + self.cellSize / 2)
+        return x_pixels, y_pixels
+    
+    def getFencePixels(self, x, y, orientation):
+        if orientation == 'h':
+            x_pixels = int(x * self.cellSize + self.cellSize / 2)
+            y_pixels = int(y * self.cellSize + self.cellSize / 2)
+        elif orientation == 'v':
+            x_pixels = int(x * self.cellSize + self.cellSize / 2)
+            y_pixels = int(y * self.cellSize + self.cellSize / 2)
         return x_pixels, y_pixels
 
     def _drawGrid(self, screen):
