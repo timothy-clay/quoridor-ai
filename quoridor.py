@@ -59,11 +59,11 @@ class Quoridor:
     
     def getFencePixels(self, x, y, orientation):
         if orientation == 'h':
-            x_pixels = int(x * self.cellSize + self.cellSize / 2)
-            y_pixels = int(y * self.cellSize + self.cellSize / 2)
+            x_pixels = int(x * self.cellSize + 2)
+            y_pixels = int(y * self.cellSize - 2)
         elif orientation == 'v':
-            x_pixels = int(x * self.cellSize + self.cellSize / 2)
-            y_pixels = int(y * self.cellSize + self.cellSize / 2)
+            x_pixels = int(x * self.cellSize - 2)
+            y_pixels = int(y * self.cellSize + 2)
         return x_pixels, y_pixels
 
     def _drawGrid(self, screen):
@@ -79,6 +79,7 @@ class Quoridor:
         # Draw the current state of the grid
         self.player1._drawPawn(self.screen)
         self.player2._drawPawn(self.screen)
+        
 
         pygame.display.flip()
         self.clock.tick(self.fps)
@@ -95,7 +96,12 @@ class Quoridor:
             self._drawGrid(self.screen)
 
             self.player1._drawPawn(self.screen)
+            for fence in self.player1.fences:
+                fence._drawFence(self.screen)
+
             self.player2._drawPawn(self.screen)
+            for fence in self.player2.fences:
+                fence._drawFence(self.screen)
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -114,8 +120,8 @@ class Quoridor:
                     # step 2: act based on current mode
                     elif mode == "move_pawn":
                         if event.key == pygame.K_w:
-                            if active_player._canMove(0, -1):
-                                active_player._movePawn(0, -1)
+                            if active_player._canMove(self.grid, 0, -1):
+                                active_player._movePawn(self.grid, 0, -1)
                                 print("Pawn moved up.")
                                 active_player = self.player2 if active_player==self.player1 else self.player1
                                 mode = None  # reset
@@ -123,8 +129,8 @@ class Quoridor:
                                 print("Cannot move there.")
                             
                         elif event.key == pygame.K_s:
-                            if active_player._canMove(0, 1):
-                                active_player._movePawn(0, 1)
+                            if active_player._canMove(self.grid, 0, 1):
+                                active_player._movePawn(self.grid, 0, 1)
                                 print("Pawn moved down.")
                                 active_player = self.player2 if active_player==self.player1 else self.player1
                                 mode = None  # reset
@@ -132,8 +138,8 @@ class Quoridor:
                                 print("Cannot move there.")
 
                         elif event.key == pygame.K_a:
-                            if active_player._canMove(-1, 0):
-                                active_player._movePawn(-1, 0)
+                            if active_player._canMove(self.grid, -1, 0):
+                                active_player._movePawn(self.grid, -1, 0)
                                 print("Pawn moved left.")
                                 active_player = self.player2 if active_player==self.player1 else self.player1
                                 mode = None  # reset
@@ -141,8 +147,8 @@ class Quoridor:
                                 print("Cannot move there.")
 
                         elif event.key == pygame.K_d:
-                            if active_player._canMove(1, 0):
-                                active_player._movePawn(1, 0)
+                            if active_player._canMove(self.grid, 1, 0):
+                                active_player._movePawn(self.grid, 1, 0)
                                 print("Pawn moved right.")
                                 active_player = self.player2 if active_player==self.player1 else self.player1
                                 mode = None  # reset
@@ -155,14 +161,26 @@ class Quoridor:
 
                     elif mode == "place_fence":
                         if event.key == pygame.K_h:
-                            print("Placed horizontal fence.")
-                            mode = None
+                            fence_orientation = 'h'
+                            mode = "fence_row"
                         elif event.key == pygame.K_v:
-                            print("Placed vertical fence.")
-                            mode = None
+                            fence_orientation = 'v'
+                            mode = "fence_row"
                         elif event.key == pygame.K_ESCAPE:
                             print("Canceled fence placement.")
                             mode = None
+
+                    elif mode == "fence_row":
+                        fence_row = int(pygame.key.name(event.key))
+                        mode = "fence_col"
+
+                    elif mode == "fence_col":
+                        fence_col = int(pygame.key.name(event.key))
+                        if active_player._canPlaceFence(self.grid, fence_orientation, fence_col, fence_row):
+                            active_player._placeFence(self.grid, fence_orientation, fence_col, fence_row)
+                        active_player = self.player2 if active_player==self.player1 else self.player1
+                        mode = None
+                        print("Placed fence")
 
             pygame.display.flip()
             self.clock.tick(self.fps)

@@ -39,10 +39,9 @@ class Player:
         return True
     
     def _placeFence(self, grid, orientation, x, y):
-        if self._canPlaceFence(grid, orientation, x, y):
-            fence = Fence(orientation, x, y, self.game)
-            self.fences.add(fence)
-            grid._addFence(fence)
+        fence = Fence(orientation, x, y, self.color, self.game)
+        self.fences.add(fence)
+        grid._addFence(fence)
         return self
 
     def _canPlaceFence(self, grid, orientation, x, y):
