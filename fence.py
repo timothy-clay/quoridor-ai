@@ -1,10 +1,11 @@
 import pygame
 
 class Fence:
-    def __init__(self, orientation, row, col, color, game):
+    def __init__(self, orientation, col, row, color, game):
         self.orientation = orientation
-        self.row = row
+
         self.col = col
+        self.row = row
 
         self.color = color
 
@@ -19,3 +20,6 @@ class Fence:
             rect = pygame.Rect(x_pixels, y_pixels, 4, self.game.cellSize * 2 - 4)
             pygame.draw.rect(screen, self.color, rect)
         return
+    
+    def _getCoords(self):
+        return self.col, self.row, self.orientation
