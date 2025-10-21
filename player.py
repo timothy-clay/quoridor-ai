@@ -25,13 +25,23 @@ class Player:
         gfxdraw.aacircle(screen, x_pixels, y_pixels, self.radius, self.color)
         gfxdraw.filled_circle(screen, x_pixels, y_pixels, self.radius, self.color)
         return
+    
+    def _getCoords(self):
+        return self.col, self.row
 
     def _movePawn(self, grid, col_change, row_change):
+        grid._movePawn(self.col, self.row, col_change, row_change)
         self.col += col_change
         self.row += row_change
         return self
     
     def _canMove(self, grid, col_change, row_change):
+
+        if self.col + col_change >= self.game.gridSize or self.row + row_change >= self.game.gridSize:
+            return False
+        
+        elif self.col + col_change < 0 or self.row + row_change < 0:
+            return False
 
         if col_change != 0:
 
@@ -47,7 +57,7 @@ class Player:
             elif col_change < 0:
                 
                 # check for fence on current cell
-                if vfences[self.row, self.col] == 1:
+                if vfences[self.row, self.col + col_change + 1] == 1:
                     return False
 
         elif row_change != 0:
@@ -64,14 +74,8 @@ class Player:
             elif row_change < 0:
                 
                 # check for fence on current cell
-                if hfences[self.row, self.col] == 1:
+                if hfences[self.row + row_change + 1, self.col] == 1:
                     return False
-
-        if self.col + col_change >= self.game.gridSize or self.row + row_change >= self.game.gridSize:
-            return False
-        
-        elif self.col + col_change < 0 or self.row + row_change < 0:
-            return False
         
         return True
     

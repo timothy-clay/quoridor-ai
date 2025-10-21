@@ -45,6 +45,8 @@ class Quoridor:
         self.player1 = Player(self.gridSize // 2, self.gridSize-1, self.colors[0], self)
         self.player2 = Player(self.gridSize // 2, 0, self.colors[1], self)
 
+        self.grid._initPawns(self.player1, self.player2)
+
         # Initialize the graphical interface (if enabled)
         if GUI:
             pygame.init()
@@ -145,39 +147,67 @@ class Quoridor:
                     elif mode == "move_pawn":
                         if event.key == pygame.K_w:
                             if active_player._canMove(self.grid, 0, -1):
-                                active_player._movePawn(self.grid, 0, -1)
+                                active_col, active_row = active_player._getCoords()
+                                if self.grid._isPawn(active_col, active_row - 1):
+                                    if active_player._canMove(self.grid, 0, -2):
+                                        active_player._movePawn(self.grid, 0, -2)
+                                    else:
+                                        continue
+                                else:
+                                    active_player._movePawn(self.grid, 0, -1)
                                 print("Pawn moved up.")
                                 active_player = self.player2 if active_player==self.player1 else self.player1
                                 mode = None  # reset
                             else:
-                                print("Cannot move there.")
+                                continue
                             
                         elif event.key == pygame.K_s:
                             if active_player._canMove(self.grid, 0, 1):
-                                active_player._movePawn(self.grid, 0, 1)
+                                active_col, active_row = active_player._getCoords()
+                                if self.grid._isPawn(active_col, active_row + 1):
+                                    if active_player._canMove(self.grid, 0, 2):
+                                        active_player._movePawn(self.grid, 0, 2)
+                                    else:
+                                        continue
+                                else:
+                                    active_player._movePawn(self.grid, 0, 1)
                                 print("Pawn moved down.")
                                 active_player = self.player2 if active_player==self.player1 else self.player1
                                 mode = None  # reset
                             else:
-                                print("Cannot move there.")
+                                continue
 
                         elif event.key == pygame.K_a:
                             if active_player._canMove(self.grid, -1, 0):
-                                active_player._movePawn(self.grid, -1, 0)
+                                active_col, active_row = active_player._getCoords()
+                                if self.grid._isPawn(active_col - 1, active_row):
+                                    if active_player._canMove(self.grid, -2, 0):
+                                        active_player._movePawn(self.grid, -2, 0)
+                                    else:
+                                        continue
+                                else:
+                                    active_player._movePawn(self.grid, -1, 0)
                                 print("Pawn moved left.")
                                 active_player = self.player2 if active_player==self.player1 else self.player1
                                 mode = None  # reset
                             else:
-                                print("Cannot move there.")
+                                continue
 
                         elif event.key == pygame.K_d:
                             if active_player._canMove(self.grid, 1, 0):
-                                active_player._movePawn(self.grid, 1, 0)
+                                active_col, active_row = active_player._getCoords()
+                                if self.grid._isPawn(active_col + 1, active_row):
+                                    if active_player._canMove(self.grid, 2, 0):
+                                        active_player._movePawn(self.grid, 2, 0)
+                                    else:
+                                        continue
+                                else:
+                                    active_player._movePawn(self.grid, 1, 0)
                                 print("Pawn moved right.")
                                 active_player = self.player2 if active_player==self.player1 else self.player1
                                 mode = None  # reset
                             else:
-                                print("Cannot move there.")
+                                continue
 
                         else:
                             print("Cancelled pawn move.")
