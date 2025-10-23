@@ -60,6 +60,65 @@ class Quoridor:
 
             self._refresh()
 
+    def execute(self, command='e'):
+        if command.lower() in ['e', 'export']:
+            pass
+
+        elif command[0].lower() == 'p':
+            new_event = pygame.event.Event(pygame.KEYDOWN, unicode='p', key=ord('p'))
+
+            try:
+                pygame.event.post(new_event)
+                self._refresh()
+            except:
+                pass
+
+            direction = command[1].lower()
+            movement_event = pygame.event.Event(pygame.KEYDOWN, unicode=direction, key=ord(direction))
+
+            try:
+                pygame.event.post(movement_event)
+                self._refresh()
+            except:
+                pass
+
+        elif command[0].lower() == 'f':
+
+            try:
+                pygame.event.post(new_event)
+                self._refresh()
+            except:
+                pass
+
+            orientation = command[1].lower()
+            orientation_event = pygame.event.Event(pygame.KEYDOWN, unicode=orientation, key=ord(orientation))
+
+            try:
+                pygame.event.post(orientation_event)
+                self._refresh()
+            except:
+                pass
+
+            col = command[1].lower()
+            col_event = pygame.event.Event(pygame.KEYDOWN, unicode=col, key=ord(col))
+
+            try:
+                pygame.event.post(col_event)
+                self._refresh()
+            except:
+                pass
+
+            row = command[1].lower()
+            row_event = pygame.event.Event(pygame.KEYDOWN, unicode=row, key=ord(row))
+
+            try:
+                pygame.event.post(row_event)
+                self._refresh()
+            except:
+                pass
+
+        return 
+
     def getPawnPixels(self, x, y):
         x_pixels = int(x * self.cellSize + self.cellSize / 2 + self.margin)
         y_pixels = int(y * self.cellSize + self.cellSize / 2 + self.margin * self.title_ratio)
