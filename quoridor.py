@@ -116,6 +116,7 @@ class Quoridor:
         running = True
         mode = None
         active_player = self.player1
+        inactive_player = self.player2
 
         while running:
             self.screen.fill(self.white)
@@ -156,7 +157,7 @@ class Quoridor:
                                 else:
                                     active_player._movePawn(self.grid, 0, -1)
                                 print("Pawn moved up.")
-                                active_player = self.player2 if active_player==self.player1 else self.player1
+                                active_player, inactive_player = inactive_player, active_player
                                 mode = None  # reset
                             else:
                                 continue
@@ -172,7 +173,7 @@ class Quoridor:
                                 else:
                                     active_player._movePawn(self.grid, 0, 1)
                                 print("Pawn moved down.")
-                                active_player = self.player2 if active_player==self.player1 else self.player1
+                                active_player, inactive_player = inactive_player, active_player
                                 mode = None  # reset
                             else:
                                 continue
@@ -188,7 +189,7 @@ class Quoridor:
                                 else:
                                     active_player._movePawn(self.grid, -1, 0)
                                 print("Pawn moved left.")
-                                active_player = self.player2 if active_player==self.player1 else self.player1
+                                active_player, inactive_player = inactive_player, active_player
                                 mode = None  # reset
                             else:
                                 continue
@@ -204,7 +205,7 @@ class Quoridor:
                                 else:
                                     active_player._movePawn(self.grid, 1, 0)
                                 print("Pawn moved right.")
-                                active_player = self.player2 if active_player==self.player1 else self.player1
+                                active_player, inactive_player = inactive_player, active_player
                                 mode = None  # reset
                             else:
                                 continue
@@ -237,11 +238,14 @@ class Quoridor:
                         key_name = pygame.key.name(event.key)
                         if key_name in '123456789':
                             fence_row = '987654321'.index(key_name)
-                            if active_player._canPlaceFence(self.grid, fence_orientation, fence_col, fence_row):
+                            if active_player._canPlaceFence(self.grid, inactive_player, fence_orientation, fence_col, fence_row):
                                 active_player._placeFence(self.grid, fence_orientation, fence_col, fence_row)
-                            active_player = self.player2 if active_player==self.player1 else self.player1
-                            print("Placed fence")
-                            mode = None
+                                active_player, inactive_player = inactive_player, active_player
+                                print("Placed fence")
+                                mode = None
+                            else:
+                                print("Invalid fence placement.")
+                                mode = None
                         else:
                             print("Cancelled fence placement.")
                             mode = None

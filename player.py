@@ -1,5 +1,6 @@
 import pygame
 from pygame import gfxdraw
+from collections import deque
 
 from fence import *
 
@@ -17,6 +18,8 @@ class Player:
         self.game = game
 
         self.fences = set()
+
+        self.target_row = self.game.gridSize - self.row - 1
 
         self.radius = int(self.game.cellSize * 0.4)
 
@@ -36,48 +39,7 @@ class Player:
         return self
     
     def _canMove(self, grid, col_change, row_change):
-
-        if self.col + col_change >= self.game.gridSize or self.row + row_change >= self.game.gridSize:
-            return False
-        
-        elif self.col + col_change < 0 or self.row + row_change < 0:
-            return False
-
-        if col_change != 0:
-
-            vfences = grid._getVFences()
-
-            # check for vertical fences
-            if col_change > 0:
-
-                # check for fence on new cell
-                if vfences[self.row, self.col + col_change] == 1:
-                    return False
-                
-            elif col_change < 0:
-                
-                # check for fence on current cell
-                if vfences[self.row, self.col + col_change + 1] == 1:
-                    return False
-
-        elif row_change != 0:
-
-            hfences = grid._getHFences()
-
-            # check for horizontal fences
-            if row_change > 0:
-                
-                # check for fence on new cell
-                if hfences[self.row + row_change, self.col] == 1:
-                    return False
-
-            elif row_change < 0:
-                
-                # check for fence on current cell
-                if hfences[self.row + row_change + 1, self.col] == 1:
-                    return False
-        
-        return True
+        return grid._validMove(self.col, self.row, col_change, row_change)
     
     def _placeFence(self, grid, orientation, col, row):
         fence = Fence(orientation, col, row, self.color, self.game)
@@ -85,5 +47,41 @@ class Player:
         grid._addFence(fence)
         return self
 
-    def _canPlaceFence(self, grid, orientation, col, row):
+    def _canPlaceFence(self, grid, opponent, orientation, col, row):
+        temp_fence = Fence(orientation, col, row, self.color, self.game)
+        temp_hfences, temp_vfences = grid._testFencePlacement(temp_fence)
+
+        if not self._checkValidPath(grid, temp_vfences, temp_hfences):
+            return False
+        
+        if not opponent._checkValidPath(grid, temp_vfences, temp_hfences):
+            return False
+        
         return True
+    
+    def _checkValidPath(self, grid, vfences, hfences):
+
+        if self._getShortestPath(grid, vfences, hfences) >= 0:
+            return True 
+    
+    def _getShortestPath(self, grid, vfences, hfences):
+        visited_cells = set()
+        cells_to_visit = deque()
+
+        cells_to_visit.append((self.col, self.row, 0))
+
+        while len(cells_to_visit) > 0:
+            current_col, current_row, distance = cells_to_visit.popleft()
+            visited_cells.add((current_col, current_row))
+
+            if current_row == self.target_row:
+                return distance
+            
+            for col_change, row_change in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+                new_col = current_col + col_change
+                new_row = current_row + row_change
+                if (new_col, new_row) not in visited_cells:
+                    if grid._validMove(current_col, current_row, col_change, row_change, vfences, hfences):
+                        cells_to_visit.append((new_col, new_row, distance + 1))
+
+        return -1
