@@ -5,7 +5,9 @@ from collections import deque
 from fence import *
 
 class Player:
-    def __init__(self, col, row, color, game):
+    def __init__(self, name, col, row, color, game):
+
+        self.name = name
 
         self.col = col
         self.row = row
@@ -24,11 +26,17 @@ class Player:
 
         self.radius = int(self.game.cellSize * 0.4)
 
+    def _checkWin(self):
+        return self.row == self.target_row
+
     def _drawPawn(self, screen):
         x_pixels, y_pixels = self.game.getPawnPixels(self.col, self.row)
         gfxdraw.aacircle(screen, x_pixels, y_pixels, self.radius, self.color)
         gfxdraw.filled_circle(screen, x_pixels, y_pixels, self.radius, self.color)
         return
+    
+    def _getName(self):
+        return self.name
     
     def _getCoords(self):
         return self.col, self.row
