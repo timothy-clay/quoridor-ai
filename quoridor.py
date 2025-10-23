@@ -7,7 +7,7 @@ from grid import *
 from fence import *
 
 class Quoridor:
-    def __init__(self, GUI=True, sleep=0.1, gs=9):
+    def __init__(self, GUI=True, print_instructions=False, sleep=0.1, gs=9):
 
         # Constants
         self.title_ratio = 1.5
@@ -26,6 +26,8 @@ class Quoridor:
 
         # Color palette for shapes
         self.colors = ['#504136', '#F7C59F']  # Taupe, Peach
+
+        self.directions = {'w':[0, -1], 's':[0, 1], 'a':[-1, 0], 'd':[1, 0]}
 
         # Mapping of color indices to color names (for debugging purposes)
         self.colorIdxToName = {0: "Taupe", 1: "Peach"}
@@ -47,77 +49,103 @@ class Quoridor:
 
         self.grid._initPawns(self.player1, self.player2)
 
-        self.current_message = self.player1._getName()
+        self.active_player = self.player1
+        self.inactive_player = self.player2
+
+        self.current_message = self.active_player._getName()
         self.current_submessage = "Press 'P' to move pawn, Press 'F' to place a fence"
+
+        self.print_instructions = print_instructions
+
+        if self.print_instructions:
+            self.message_space = self.margin
+        else:
+            self.message_space = 0
 
         # Initialize the graphical interface (if enabled)
         if GUI:
             pygame.init()
             self.screenSize = self.gridSize * self.cellSize + 2 * self.margin
-            self.screen = pygame.display.set_mode((self.screenSize, self.screenSize + self.margin * (self.title_ratio - 1) + self.margin))
+            self.screen = pygame.display.set_mode((self.screenSize, self.screenSize + self.margin * (self.title_ratio - 1) + self.message_space))
             pygame.display.set_caption("Shape Placement Grid")
             self.clock = pygame.time.Clock()
 
             self._refresh()
 
-    def execute(self, command='e'):
-        if command.lower() in ['e', 'export']:
-            pass
+    def _changeTurn(self):
+        self.active_player, self.inactive_player = self.inactive_player, self.active_player
 
-        elif command[0].lower() == 'p':
-            new_event = pygame.event.Event(pygame.KEYDOWN, unicode='p', key=ord('p'))
+        self.current_message = self.active_player._getName()
+        self.current_submessage = "Press 'P' to move pawn, Press 'F' to place a fence"
 
-            try:
-                pygame.event.post(new_event)
-                self._refresh()
-            except:
-                pass
+        return
+    
+    # def isValidTurn(self, command):
+
+    #     if command[0].lower() == 'p':
+
+    #         direction = command[1].lower()
+    #         col_change, row_change = self.directions[direction]
+
+    #         if self.active_player._canMove(self.grid, col_change, row_change):
+    #             active_col, active_row = self.active_player._getCoords()
+                
+    #             if self.grid._isPawn(active_col + col_change, active_row + row_change):
+    #                 if self.active_player._canMove(self.grid, col_change * 2, row_change * 2):
+    #                     return True
+    #             else:
+    #                 return True
+
+    #     elif command[0].lower() == 'f':
+
+    #         orientation = command[1].lower()
+    #         fence_col = 'abcdefghi'.index(command[2].lower())
+    #         fence_row = '987654321'.index(command[3].lower())
+
+    #         if self.active_player._getRemainingFences() > 0:
+    #             if self.active_player._canPlaceFence(self.grid, self.inactive_player, orientation, fence_col, fence_row):
+    #                 return True
+
+    #     return False
+
+    def execute(self, command):
+
+        if command[0].lower() == 'p':
 
             direction = command[1].lower()
-            movement_event = pygame.event.Event(pygame.KEYDOWN, unicode=direction, key=ord(direction))
+            col_change, row_change = self.directions[direction]
 
-            try:
-                pygame.event.post(movement_event)
-                self._refresh()
-            except:
-                pass
+            if self.active_player._canMove(self.grid, col_change, row_change):
+                active_col, active_row = self.active_player._getCoords()
+                
+                if self.grid._isPawn(active_col + col_change, active_row + row_change):
+                    if self.active_player._canMove(self.grid, col_change * 2, row_change * 2):
+                        self.active_player._movePawn(self.grid, col_change * 2, row_change * 2)
+                else:
+                    self.active_player._movePawn(self.grid, col_change, row_change)
 
         elif command[0].lower() == 'f':
 
-            try:
-                pygame.event.post(new_event)
-                self._refresh()
-            except:
-                pass
-
             orientation = command[1].lower()
-            orientation_event = pygame.event.Event(pygame.KEYDOWN, unicode=orientation, key=ord(orientation))
+            fence_col = 'abcdefghi'.index(command[2].lower())
+            fence_row = '987654321'.index(command[3].lower())
 
-            try:
-                pygame.event.post(orientation_event)
-                self._refresh()
-            except:
-                pass
+            if self.active_player._getRemainingFences() > 0:
+                if self.active_player._canPlaceFence(self.grid, self.inactive_player, orientation, fence_col, fence_row):
+                    self.active_player._placeFence(self.grid, orientation, fence_col, fence_row)
+                    self._changeTurn()
 
-            col = command[1].lower()
-            col_event = pygame.event.Event(pygame.KEYDOWN, unicode=col, key=ord(col))
+        if self.active_player._checkWin():
+            winner = self.active_player
 
-            try:
-                pygame.event.post(col_event)
-                self._refresh()
-            except:
-                pass
+        else:
+            winner = None
+            self._changeTurn()
 
-            row = command[1].lower()
-            row_event = pygame.event.Event(pygame.KEYDOWN, unicode=row, key=ord(row))
-
-            try:
-                pygame.event.post(row_event)
-                self._refresh()
-            except:
-                pass
-
-        return 
+        self._refresh()
+        
+        return winner # active player, pawns, horizontal fences, vertical fences, winner
+    
 
     def getPawnPixels(self, x, y):
         x_pixels = int(x * self.cellSize + self.cellSize / 2 + self.margin)
@@ -134,6 +162,7 @@ class Quoridor:
         return x_pixels, y_pixels
     
     def _printMessage(self, screen, text, subtext, color):
+
         font = pygame.font.SysFont('verdana', 18)
         message = font.render(text, True, color)
         message_rect = message.get_rect(topleft=(self.margin - 10, self.margin * self.title_ratio + self.gridDisplaySize + self.margin - 12))
@@ -187,19 +216,26 @@ class Quoridor:
         self.screen.fill(self.white)
         self._drawGrid(self.screen)
         self._drawPlayerFences(self.screen, self.player1, self.player2)
-        self._printMessage(self.screen, self.current_message, self.current_submessage, self.black)
 
-        # Draw the current state of the grid
+        if self.print_instructions:
+            self._printMessage(self.screen, self.current_message, self.current_submessage, self.black)
+
         self.player1._drawPawn(self.screen)
         self.player2._drawPawn(self.screen)
+
+        for fence in self.player1.fences:
+            fence._drawFence(self.screen)
+
+        for fence in self.player2.fences:
+            fence._drawFence(self.screen)
         
         pygame.display.flip()
         self.clock.tick(self.fps)
         time.sleep(self.sleeptime)  
 
     def _loop_gui(self):
-        ## Main Loop for the GUI
         running = True
+
         mode = None
         active_player = self.player1
         inactive_player = self.player2
@@ -236,19 +272,24 @@ class Quoridor:
                     
                     # step 2: act based on current mode
                     elif mode == "move_pawn":
-                        if event.key == pygame.K_w:
-                            if active_player._canMove(self.grid, 0, -1):
+                        key_name = pygame.key.name(event.key).lower()
+
+                        if key_name in ['w', 's', 'a', 'd']:
+
+                            col_change, row_change = self.directions[key_name]
+
+                            if active_player._canMove(self.grid, col_change, row_change):
                                 active_col, active_row = active_player._getCoords()
                                 
-                                if self.grid._isPawn(active_col, active_row - 1):
-                                    if active_player._canMove(self.grid, 0, -2):
-                                        active_player._movePawn(self.grid, 0, -2)
+                                if self.grid._isPawn(active_col + col_change, active_row + row_change):
+                                    if active_player._canMove(self.grid, col_change * 2, row_change * 2):
+                                        active_player._movePawn(self.grid, col_change * 2, row_change * 2)
                                     else:
                                         self.current_message = active_player._getName()
                                         self.current_submessage = "Invalid pawn movement. Choose a new action (P/F)."
                                         mode = None
                                 else:
-                                    active_player._movePawn(self.grid, 0, -1)
+                                    active_player._movePawn(self.grid, col_change, row_change)
                                 
                                 if active_player._checkWin():
                                     self.current_message = active_player._getName() + ' Wins!'
@@ -260,87 +301,6 @@ class Quoridor:
                                     self.current_submessage = "Press 'P' to move pawn, Press 'F' to place a fence."
                                     mode = None 
 
-                            else:
-                                self.current_message = active_player._getName()
-                                self.current_submessage = "Invalid pawn movement. Choose a new action (P/F)."
-                                mode = None
-                            
-                        elif event.key == pygame.K_s:
-                            if active_player._canMove(self.grid, 0, 1):
-                                active_col, active_row = active_player._getCoords()
-                                if self.grid._isPawn(active_col, active_row + 1):
-                                    if active_player._canMove(self.grid, 0, 2):
-                                        active_player._movePawn(self.grid, 0, 2)
-                                    else:
-                                        self.current_message = active_player._getName()
-                                        self.current_submessage = "Invalid pawn movement. Choose a new action (P/F)."
-                                        mode = None
-                                else:
-                                    active_player._movePawn(self.grid, 0, 1)
-
-                                if active_player._checkWin():
-                                    self.current_message = active_player._getName() + ' Wins!'
-                                    self.current_submessage = "Press any button to exit."
-                                    mode = 'game_over'
-                                else:
-                                    active_player, inactive_player = inactive_player, active_player
-                                    self.current_message = active_player._getName()
-                                    self.current_submessage = "Press 'P' to move pawn, Press 'F' to place a fence."
-                                    mode = None 
-                            else:
-                                self.current_message = active_player._getName()
-                                self.current_submessage = "Invalid pawn movement. Choose a new action (P/F)."
-                                mode = None
-
-                        elif event.key == pygame.K_a:
-                            if active_player._canMove(self.grid, -1, 0):
-                                active_col, active_row = active_player._getCoords()
-                                if self.grid._isPawn(active_col - 1, active_row):
-                                    if active_player._canMove(self.grid, -2, 0):
-                                        active_player._movePawn(self.grid, -2, 0)
-                                    else:
-                                        self.current_message = active_player._getName()
-                                        self.current_submessage = "Invalid pawn movement. Choose a new action (P/F)."
-                                        mode = None
-                                else:
-                                    active_player._movePawn(self.grid, -1, 0)
-
-                                if active_player._checkWin():
-                                    self.current_message = active_player._getName() + ' Wins!'
-                                    self.current_submessage = "Press any button to exit."
-                                    mode = 'game_over'
-                                else:
-                                    active_player, inactive_player = inactive_player, active_player
-                                    self.current_message = active_player._getName()
-                                    self.current_submessage = "Press 'P' to move pawn, Press 'F' to place a fence."
-                                    mode = None 
-                            else:
-                                self.current_message = active_player._getName()
-                                self.current_submessage = "Invalid pawn movement. Choose a new action (P/F)."
-                                mode = None
-
-                        elif event.key == pygame.K_d:
-                            if active_player._canMove(self.grid, 1, 0):
-                                active_col, active_row = active_player._getCoords()
-                                if self.grid._isPawn(active_col + 1, active_row):
-                                    if active_player._canMove(self.grid, 2, 0):
-                                        active_player._movePawn(self.grid, 2, 0)
-                                    else:
-                                        self.current_message = active_player._getName()
-                                        self.current_submessage = "Invalid pawn movement. Choose a new action (P/F)."
-                                        mode = None
-                                else:
-                                    active_player._movePawn(self.grid, 1, 0)
-
-                                if active_player._checkWin():
-                                    self.current_message = active_player._getName() + ' Wins!'
-                                    self.current_submessage = "Press any button to exit."
-                                    mode = 'game_over'
-                                else:
-                                    active_player, inactive_player = inactive_player, active_player
-                                    self.current_message = active_player._getName()
-                                    self.current_submessage = "Press 'P' to move pawn, Press 'F' to place a fence."
-                                    mode = None 
                             else:
                                 self.current_message = active_player._getName()
                                 self.current_submessage = "Invalid pawn movement. Choose a new action (P/F)."
@@ -410,5 +370,5 @@ class Quoridor:
         self._loop_gui()
 
 if __name__ == "__main__":
-    game = Quoridor(True, sleep=0.1, gs=9)
+    game = Quoridor(True, print_instructions = True, sleep=0.1, gs=9)
     game._main()
