@@ -6,6 +6,7 @@ from fence import *
 
 class Player:
     def __init__(self, col, row, color, game):
+
         self.col = col
         self.row = row
 
@@ -31,6 +32,9 @@ class Player:
     
     def _getCoords(self):
         return self.col, self.row
+    
+    def _getColor(self):
+        return self.color
 
     def _movePawn(self, grid, col_change, row_change):
         grid._movePawn(self.col, self.row, col_change, row_change)
@@ -46,9 +50,18 @@ class Player:
         self.fences.add(fence)
         grid._addFence(fence)
         return self
+    
+    def _getRemainingFences(self):
+        return 10 - len(self.fences)
+    
 
     def _canPlaceFence(self, grid, opponent, orientation, col, row):
+
         temp_fence = Fence(orientation, col, row, self.color, self.game)
+
+        if not grid._validFencePlacement(temp_fence):
+            return False
+        
         temp_hfences, temp_vfences = grid._testFencePlacement(temp_fence)
 
         if not self._checkValidPath(grid, temp_vfences, temp_hfences):

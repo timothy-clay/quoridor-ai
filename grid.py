@@ -7,6 +7,8 @@ class Grid:
         self.vfences = np.zeros(shape=(gs, gs))
         self.pawns = np.zeros(shape=(gs, gs))
 
+        self.fences = set()
+
     def _initPawns(self, player1, player2):
         for player in (player1, player2):
             col, row = player._getCoords()
@@ -32,6 +34,8 @@ class Grid:
         elif orientation == 'v':
             self.vfences[row:row+2, col] = 1
 
+        self.fences.add(fence)
+
     def _testFencePlacement(self, fence):
 
         col, row, orientation = fence._getCoords()
@@ -54,6 +58,43 @@ class Grid:
     
     def _getVFences(self):
         return self.vfences
+    
+    def _validFencePlacement(self, fence):
+
+        col, row, orientation = fence._getCoords()
+
+        if orientation == 'h':
+            # placement restrictions
+            if col >= self.gs - 1 or row <= 0:
+                return False
+
+            # check that does not overlap with existing fence
+            if self.hfences[row, col] == 1 or self.hfences[row, col+1] == 1:
+                return False
+
+            # check that col+1, row-1 is not the start of a fence
+            for existing_fence in self.fences:
+                fence_col, fence_row, fence_orientation = existing_fence._getCoords()
+                if fence_orientation == 'v' and fence_col == col + 1 and fence_row == row - 1:
+                    return False
+
+
+        elif orientation == 'v':
+            # placement restrictions
+            if col <= 0 or row >= self.gs - 1:
+                return False
+
+            # check that does not overlap with existing fence
+            if self.vfences[row, col] == 1 or self.vfences[row+1, col] == 1:
+                return False
+
+            # check that col-1, row+1 is not the start of a fence
+            for existing_fence in self.fences:
+                fence_col, fence_row, fence_orientation = existing_fence._getCoords()
+                if fence_orientation == 'h' and fence_col == col - 1 and fence_row == row + 1:
+                    return False
+
+        return True
     
     def _validMove(self, col, row, col_change, row_change, vfences = None, hfences = None):
         if col + col_change >= self.gs or row + row_change >= self.gs:

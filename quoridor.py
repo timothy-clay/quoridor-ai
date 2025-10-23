@@ -14,7 +14,7 @@ class Quoridor:
         self.margin = 40
         self.gridSize = gs
         self.cellSize = 40
-        self.gridDisplaySide = self.gridSize * self.cellSize
+        self.gridDisplaySize = self.gridSize * self.cellSize
         self.screenSize = self.gridSize * self.cellSize + 2 * self.margin
         self.fps = 60
         self.sleeptime = render_delay_sec
@@ -83,7 +83,7 @@ class Quoridor:
 
             label_bot = font.render(text, True, (100, 100, 100))
             label_bot_rect = label_bot.get_rect(center=(self.margin + self.cellSize * i + self.cellSize // 2, 
-                                                        int(self.margin * self.title_ratio + self.gridDisplaySide + self.margin // 2 - 7)))
+                                                        int(self.margin * self.title_ratio + self.gridDisplaySize + self.margin // 2 - 7)))
             screen.blit(label_bot, label_bot_rect)
 
             label_side = font.render(str(9-i), True, (100, 100, 100))
@@ -91,17 +91,28 @@ class Quoridor:
                                                           int(self.cellSize * i + self.cellSize // 2 + self.margin * self.title_ratio)))
             screen.blit(label_side, label_side_rect)
 
-        rect = pygame.Rect(self.margin, int(self.margin * self.title_ratio), self.gridDisplaySide, self.gridDisplaySide)
-        pygame.draw.rect(screen, self.gray, rect, self.gridDisplaySide)
+        rect = pygame.Rect(self.margin, int(self.margin * self.title_ratio), self.gridDisplaySize, self.gridDisplaySize)
+        pygame.draw.rect(screen, self.gray, rect, self.gridDisplaySize)
 
-        for x in range(self.margin, self.gridDisplaySide+1, self.cellSize):
-            for y in range(int(self.margin * self.title_ratio), int(self.gridDisplaySide + self.margin * (self.title_ratio-1) + 1), self.cellSize):
+        for x in range(self.margin, self.gridDisplaySize+1, self.cellSize):
+            for y in range(int(self.margin * self.title_ratio), int(self.gridDisplaySize + self.margin * (self.title_ratio-1) + 1), self.cellSize):
                 rect = pygame.Rect(x, y, self.cellSize, self.cellSize)
                 pygame.draw.rect(screen, self.white, rect, 2)
+
+    def _drawPlayerFences(self, screen, player1, player2):
+
+        for i in range(player1._getRemainingFences()):
+            rect = pygame.Rect(self.margin + self.gridDisplaySize + 2, int(self.margin * self.title_ratio) + self.gridDisplaySize  - 8 * (i + 1), self.margin - 6, 4)
+            pygame.draw.rect(screen, player1._getColor(), rect, 4)
+
+        for i in range(player2._getRemainingFences()):
+            rect = pygame.Rect(self.margin + self.gridDisplaySize + 2, int(self.margin * self.title_ratio) + 8 * i + 2, self.margin - 6, 4)
+            pygame.draw.rect(screen, player2._getColor(), rect, 4)
 
     def _refresh(self):
         self.screen.fill(self.white)
         self._drawGrid(self.screen)
+        self._drawPlayerFences(self.screen, self.player1, self.player2)
 
         # Draw the current state of the grid
         self.player1._drawPawn(self.screen)
@@ -121,6 +132,7 @@ class Quoridor:
         while running:
             self.screen.fill(self.white)
             self._drawGrid(self.screen)
+            self._drawPlayerFences(self.screen, self.player1, self.player2)
 
             self.player1._drawPawn(self.screen)
             for fence in self.player1.fences:
@@ -238,13 +250,18 @@ class Quoridor:
                         key_name = pygame.key.name(event.key)
                         if key_name in '123456789':
                             fence_row = '987654321'.index(key_name)
-                            if active_player._canPlaceFence(self.grid, inactive_player, fence_orientation, fence_col, fence_row):
-                                active_player._placeFence(self.grid, fence_orientation, fence_col, fence_row)
-                                active_player, inactive_player = inactive_player, active_player
-                                print("Placed fence")
-                                mode = None
+                            if active_player._getRemainingFences() > 0:
+                                print("No remaining fences")
+                                if active_player._canPlaceFence(self.grid, inactive_player, fence_orientation, fence_col, fence_row):
+                                    active_player._placeFence(self.grid, fence_orientation, fence_col, fence_row)
+                                    active_player, inactive_player = inactive_player, active_player
+                                    print("Placed fence")
+                                    mode = None
+                                else:
+                                    print("Invalid fence placement.")
+                                    mode = None
                             else:
-                                print("Invalid fence placement.")
+                                print("No remaining fences")
                                 mode = None
                         else:
                             print("Cancelled fence placement.")
