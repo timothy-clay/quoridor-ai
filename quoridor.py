@@ -62,7 +62,6 @@ class Quoridor:
         else:
             self.message_space = 0
 
-        # Initialize the graphical interface (if enabled)
         if GUI:
             pygame.init()
             self.screenSize = self.gridSize * self.cellSize + 2 * self.margin
@@ -80,33 +79,6 @@ class Quoridor:
 
         return
     
-    # def isValidTurn(self, command):
-
-    #     if command[0].lower() == 'p':
-
-    #         direction = command[1].lower()
-    #         col_change, row_change = self.directions[direction]
-
-    #         if self.active_player._canMove(self.grid, col_change, row_change):
-    #             active_col, active_row = self.active_player._getCoords()
-                
-    #             if self.grid._isPawn(active_col + col_change, active_row + row_change):
-    #                 if self.active_player._canMove(self.grid, col_change * 2, row_change * 2):
-    #                     return True
-    #             else:
-    #                 return True
-
-    #     elif command[0].lower() == 'f':
-
-    #         orientation = command[1].lower()
-    #         fence_col = 'abcdefghi'.index(command[2].lower())
-    #         fence_row = '987654321'.index(command[3].lower())
-
-    #         if self.active_player._getRemainingFences() > 0:
-    #             if self.active_player._canPlaceFence(self.grid, self.inactive_player, orientation, fence_col, fence_row):
-    #                 return True
-
-    #     return False
 
     def execute(self, command):
 
