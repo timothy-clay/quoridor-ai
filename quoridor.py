@@ -7,9 +7,11 @@ from grid import *
 from fence import *
 
 class Quoridor:
-    def __init__(self, GUI=True, print_instructions=False, sleep=0.1, gs=9):
+    def __init__(self, GUI=True, print_instructions=False, sleep=0.1, gs=9, 
+                 grid=None, players=None, active_player=None):
 
         # Constants
+        self.GUI = GUI
         self.title_ratio = 1.5
         self.margin = 40
         self.gridSize = gs
@@ -42,15 +44,26 @@ class Quoridor:
         self.placedShapes = []
         self.done = False
 
-        self.grid = Grid(self.gridSize)
+        if grid:
+            self.grid = grid
+        else:
+            self.grid = Grid(self.gridSize)
 
-        self.player1 = Player('Player 1', self.gridSize // 2, self.gridSize-1, self.colors[0], self)
-        self.player2 = Player('Player 2', self.gridSize // 2, 0, self.colors[1], self)
+        if players:
+            self.player1 = players[0]
+            self.player2 = players[0]
+        else:
+            self.player1 = Player('Player 1', self.gridSize // 2, self.gridSize-1, self.colors[0], self)
+            self.player2 = Player('Player 2', self.gridSize // 2, 0, self.colors[1], self)
 
         self.grid._initPawns(self.player1, self.player2)
 
-        self.active_player = self.player1
-        self.inactive_player = self.player2
+        if active_player:
+            self.active_player = active_player
+            self.inactive_player = self.player1 if self.player2 == active_player else self.player2
+        else:
+            self.active_player = self.player1
+            self.inactive_player = self.player2
 
         self.current_message = self.active_player._getName()
         self.current_submessage = "Press 'P' to move pawn, Press 'F' to place a fence"
@@ -62,7 +75,7 @@ class Quoridor:
         else:
             self.message_space = 0
 
-        if GUI:
+        if self.GUI:
             pygame.init()
             self.screenSize = self.gridSize * self.cellSize + 2 * self.margin
             self.screen = pygame.display.set_mode((self.screenSize, self.screenSize + self.margin * (self.title_ratio - 1) + self.message_space))
@@ -70,6 +83,19 @@ class Quoridor:
             self.clock = pygame.time.Clock()
 
             self._refresh()
+
+    def copy(self):
+        grid = self.grid.copy()
+        players = (self.player1.copy(), self.player2.copy())
+        active_player = players[0] if self.active_player == self.player1 else players[1]
+        
+        return Quoridor(self.GUI, 
+                        self.print_instructions, 
+                        self.sleeptime, 
+                        self.gridSize, 
+                        grid, 
+                        players, 
+                        active_player)
 
     def _changeTurn(self):
         self.active_player, self.inactive_player = self.inactive_player, self.active_player
@@ -116,7 +142,10 @@ class Quoridor:
 
         self._refresh()
         
-        return winner # active player, pawns, horizontal fences, vertical fences, winner
+        return winner # grid, pawns, horizontal fences, vertical fences, winner
+    
+    def copy(self):
+        return
     
 
     def getPawnPixels(self, x, y):

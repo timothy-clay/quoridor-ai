@@ -1,13 +1,32 @@
 import numpy as np
 
 class Grid:
-    def __init__(self, gs):
+    def __init__(self, gs, hfences=None, vfences=None, pawns=None, fences=None):
         self.gs = gs
-        self.hfences = np.zeros(shape=(gs, gs))
-        self.vfences = np.zeros(shape=(gs, gs))
-        self.pawns = np.zeros(shape=(gs, gs))
 
-        self.fences = set()
+        if hfences:
+            self.hfences = hfences
+        else:
+            self.hfences = np.zeros(shape=(gs, gs))
+
+        if vfences:
+            self.vfences = vfences
+        else:
+            self.vfences = np.zeros(shape=(gs, gs))
+
+        if pawns:
+            self.pawns = pawns
+        else:
+            self.pawns = np.zeros(shape=(gs, gs))
+
+        if fences:
+            self.fences = fences
+        else:
+            self.fences = set()
+
+    def copy(self):
+        return Grid(self.gs, self.hfences, self.vfences, self.pawns, self.fences)
+
 
     def _initPawns(self, player1, player2):
         for player in (player1, player2):

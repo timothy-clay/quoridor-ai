@@ -5,7 +5,7 @@ from collections import deque
 from fence import *
 
 class Player:
-    def __init__(self, name, col, row, color, game):
+    def __init__(self, name, col, row, color, game, fences=None, target_row=None, radius=None):
 
         self.name = name
 
@@ -20,11 +20,23 @@ class Player:
         self.color = (r, g, b)
         self.game = game
 
-        self.fences = set()
+        if fences:
+            self.fences = fences
+        else:
+            self.fences = set()
 
-        self.target_row = self.game.gridSize - self.row - 1
+        if target_row:
+            self.target_row = target_row
+        else:
+            self.target_row = self.game.gridSize - self.row - 1
 
-        self.radius = int(self.game.cellSize * 0.4)
+        if radius:
+            self.radius = radius
+        else:
+            self.radius = int(self.game.cellSize * 0.4)
+
+    def copy(self):
+        return Player(self.name, self.col, self.row, self.color, self.game, self.fences, self.target_row, self.radius)
 
     def _checkWin(self):
         return self.row == self.target_row
