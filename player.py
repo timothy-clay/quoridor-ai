@@ -37,6 +37,35 @@ class Player:
 
     def copy(self):
         return Player(self.name, self.col, self.row, self.color, self.game, self.fences, self.target_row, self.radius)
+    
+    def getValidTurns(self, grid, opponent):
+        valid_turns = []
+
+        for movement_direction in 'wsad':
+            col_change, row_change = self.game.directions[movement_direction]
+
+            if self._canMove(grid, col_change, row_change):
+                active_col, active_row = self._getCoords()
+                
+                if grid._isPawn(active_col + col_change, active_row + row_change):
+                    if self._canMove(grid, col_change * 2, row_change * 2):
+                        valid_turns.append(f'p{movement_direction}')
+                else:
+                    valid_turns.append(f'p{movement_direction}')
+
+        if self._getRemainingFences() > 0:
+            
+            for orientation in 'hv':
+                for col in 'abcdefghi':
+                    for row in '123456789':
+
+                        fence_col = 'abcdefghi'.index(col)
+                        fence_row = '987654321'.index(row)
+                        
+                        if self._canPlaceFence(grid, opponent, orientation, fence_col, fence_row):
+                            valid_turns.append(f'f{orientation}{col}{row}')
+
+        return valid_turns
 
     def _checkWin(self):
         return self.row == self.target_row

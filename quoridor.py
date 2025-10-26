@@ -108,7 +108,10 @@ class Quoridor:
 
     def execute(self, command):
 
-        if command[0].lower() == 'p':
+        if command[0].lower() == 'e':
+            return None, self.grid, self.active_player, self.inactive_player
+
+        elif command[0].lower() == 'p':
 
             direction = command[1].lower()
             col_change, row_change = self.directions[direction]
@@ -131,7 +134,6 @@ class Quoridor:
             if self.active_player._getRemainingFences() > 0:
                 if self.active_player._canPlaceFence(self.grid, self.inactive_player, orientation, fence_col, fence_row):
                     self.active_player._placeFence(self.grid, orientation, fence_col, fence_row)
-                    self._changeTurn()
 
         if self.active_player._checkWin():
             winner = self.active_player
@@ -142,7 +144,7 @@ class Quoridor:
 
         self._refresh()
         
-        return winner # grid, pawns, horizontal fences, vertical fences, winner
+        return winner, self.grid, self.active_player, self.inactive_player # grid, pawns, horizontal fences, vertical fences, winner
     
     def copy(self):
         return
