@@ -6,6 +6,8 @@ from player import *
 from grid import *
 from fence import *
 
+DIRECTIONS = {'w':[0, -1], 's':[0, 1], 'a':[-1, 0], 'd':[1, 0]}
+
 class Quoridor:
     def __init__(self, GUI=True, print_instructions=False, sleep=0.1, gs=9, 
                  grid=None, players=None, active_player=None):
@@ -29,8 +31,6 @@ class Quoridor:
         # Color palette for shapes
         self.colors = ['#504136', '#F7C59F']  # Taupe, Peach
 
-        self.directions = {'w':[0, -1], 's':[0, 1], 'a':[-1, 0], 'd':[1, 0]}
-
         # Mapping of color indices to color names (for debugging purposes)
         self.colorIdxToName = {0: "Taupe", 1: "Peach"}
 
@@ -51,10 +51,10 @@ class Quoridor:
 
         if players:
             self.player1 = players[0]
-            self.player2 = players[0]
+            self.player2 = players[1]
         else:
-            self.player1 = Player('Player 1', self.gridSize // 2, self.gridSize-1, self.colors[0], self)
-            self.player2 = Player('Player 2', self.gridSize // 2, 0, self.colors[1], self)
+            self.player1 = Player('Player 1', self.gridSize // 2, self.gridSize-1, self.colors[0], self.gridSize)
+            self.player2 = Player('Player 2', self.gridSize // 2, 0, self.colors[1], self.gridSize)
 
         self.grid._initPawns(self.player1, self.player2)
 
@@ -84,14 +84,13 @@ class Quoridor:
 
             self._refresh()
 
-    def copy(self):
-        grid = self.grid.copy()
-        players = (self.player1.copy(), self.player2.copy())
+    def duplicate(self):
+
+        grid = self.grid.duplicate()
+        players = (self.player1.duplicate(), self.player2.duplicate())
         active_player = players[0] if self.active_player == self.player1 else players[1]
         
-        return Quoridor(self.GUI, 
-                        self.print_instructions, 
-                        self.sleeptime, 
+        return Quoridor(False, False, 0, 
                         self.gridSize, 
                         grid, 
                         players, 
@@ -109,12 +108,13 @@ class Quoridor:
     def execute(self, command):
 
         if command[0].lower() == 'e':
-            return None, self.grid, self.active_player, self.inactive_player
+            players = {'player1':self.player1, 'player2':self.player2, 'active_player':self.active_player, 'inactive_player': self.inactive_player}
+            return None, self.grid, players
 
         elif command[0].lower() == 'p':
 
             direction = command[1].lower()
-            col_change, row_change = self.directions[direction]
+            col_change, row_change = DIRECTIONS[direction]
 
             if self.active_player._canMove(self.grid, col_change, row_change):
                 active_col, active_row = self.active_player._getCoords()
@@ -142,9 +142,12 @@ class Quoridor:
             winner = None
             self._changeTurn()
 
-        self._refresh()
+        if self.GUI:
+            self._refresh()
+
+        players = {'player1':self.player1, 'player2':self.player2, 'active_player':self.active_player, 'inactive_player': self.inactive_player}
         
-        return winner, self.grid, self.active_player, self.inactive_player # grid, pawns, horizontal fences, vertical fences, winner
+        return winner, self.grid, players # grid, pawns, horizontal fences, vertical fences, winner
     
     def copy(self):
         return
@@ -205,6 +208,25 @@ class Quoridor:
                 rect = pygame.Rect(x, y, self.cellSize, self.cellSize)
                 pygame.draw.rect(screen, self.white, rect, 2)
 
+    def _drawPawn(self, screen, player):
+        col, row = player._getCoords()
+        radius = int(self.cellSize * 0.4)
+        x_pixels, y_pixels = self.getPawnPixels(col, row)
+        gfxdraw.aacircle(screen, x_pixels, y_pixels, radius, player._getColor())
+        gfxdraw.filled_circle(screen, x_pixels, y_pixels, radius, player._getColor())
+        return
+    
+    def _drawFence(self, screen, fence):
+        col, row, orientation = fence._getCoords()
+        x_pixels, y_pixels = self.getFencePixels(col, row, orientation)
+        if orientation == 'h':
+            rect = pygame.Rect(x_pixels, y_pixels, self.cellSize * 2 - 4, 4)
+            pygame.draw.rect(screen, fence._getColor(), rect)
+        elif orientation == 'v':
+            rect = pygame.Rect(x_pixels, y_pixels, 4, self.cellSize * 2 - 4)
+            pygame.draw.rect(screen, fence._getColor(), rect)
+        return
+
     def _drawPlayerFences(self, screen, player1, player2):
 
         for i in range(player1._getRemainingFences()):
@@ -216,6 +238,7 @@ class Quoridor:
             pygame.draw.rect(screen, player2._getColor(), rect, 4)
 
     def _refresh(self):
+        
         self.screen.fill(self.white)
         self._drawGrid(self.screen)
         self._drawPlayerFences(self.screen, self.player1, self.player2)
@@ -223,14 +246,14 @@ class Quoridor:
         if self.print_instructions:
             self._printMessage(self.screen, self.current_message, self.current_submessage, self.black)
 
-        self.player1._drawPawn(self.screen)
-        self.player2._drawPawn(self.screen)
+        self._drawPawn(self.screen, self.player1)
+        self._drawPawn(self.screen, self.player2)
 
         for fence in self.player1.fences:
-            fence._drawFence(self.screen)
+            self._drawFence(self.screen, fence)
 
         for fence in self.player2.fences:
-            fence._drawFence(self.screen)
+            self._drawFence(self.screen, fence)
         
         pygame.display.flip()
         self.clock.tick(self.fps)
@@ -249,13 +272,13 @@ class Quoridor:
             self._drawPlayerFences(self.screen, self.player1, self.player2)
             self._printMessage(self.screen, self.current_message, self.current_submessage, self.black)
 
-            self.player1._drawPawn(self.screen)
+            self._drawPawn(self.screen, self.player1)
             for fence in self.player1.fences:
-                fence._drawFence(self.screen)
+                self._drawFence(self.screen, fence)
 
-            self.player2._drawPawn(self.screen)
+            self._drawPawn(self.screen, self.player2)
             for fence in self.player2.fences:
-                fence._drawFence(self.screen)
+                self._drawFence(self.screen, fence)
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -279,7 +302,7 @@ class Quoridor:
 
                         if key_name in ['w', 's', 'a', 'd']:
 
-                            col_change, row_change = self.directions[key_name]
+                            col_change, row_change = DIRECTIONS[key_name]
 
                             if active_player._canMove(self.grid, col_change, row_change):
                                 active_col, active_row = active_player._getCoords()

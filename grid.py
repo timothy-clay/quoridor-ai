@@ -4,28 +4,28 @@ class Grid:
     def __init__(self, gs, hfences=None, vfences=None, pawns=None, fences=None):
         self.gs = gs
 
-        if hfences:
+        if hfences is not None:
             self.hfences = hfences
         else:
             self.hfences = np.zeros(shape=(gs, gs))
 
-        if vfences:
+        if vfences is not None:
             self.vfences = vfences
         else:
             self.vfences = np.zeros(shape=(gs, gs))
 
-        if pawns:
+        if pawns is not None:
             self.pawns = pawns
         else:
             self.pawns = np.zeros(shape=(gs, gs))
 
-        if fences:
+        if fences is not None:
             self.fences = fences
         else:
             self.fences = set()
 
-    def copy(self):
-        return Grid(self.gs, self.hfences, self.vfences, self.pawns, self.fences)
+    def duplicate(self):
+        return Grid(self.gs, self.hfences.copy(), self.vfences.copy(), self.pawns.copy(), self.fences.copy())
 
 
     def _initPawns(self, player1, player2):
