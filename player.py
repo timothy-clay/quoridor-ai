@@ -1,39 +1,74 @@
 import pygame
 from pygame import gfxdraw
 from collections import deque
+import numpy as np
 
 from fence import *
 
+DIRECTIONS = {'w':[0, -1], 's':[0, 1], 'a':[-1, 0], 'd':[1, 0]}
+
 class Player:
-    def __init__(self, name, col, row, color, game):
+    def __init__(self, name, col, row, color, gridSize, fences=None, target_row=None):
 
         self.name = name
 
         self.col = col
         self.row = row
 
-        color = color.lstrip('#')
-        r = int(color[0:2], 16)
-        g = int(color[2:4], 16)
-        b = int(color[4:6], 16)
+        self.raw_color = color.lstrip('#')
+        r = int(self.raw_color[0:2], 16)
+        g = int(self.raw_color[2:4], 16)
+        b = int(self.raw_color[4:6], 16)
 
         self.color = (r, g, b)
-        self.game = game
 
-        self.fences = set()
+        self.gridSize = gridSize
 
-        self.target_row = self.game.gridSize - self.row - 1
+        if fences is not None:
+            self.fences = fences
+        else:
+            self.fences = set()
 
-        self.radius = int(self.game.cellSize * 0.4)
+        if target_row is not None:
+            self.target_row = target_row
+        else:
+            self.target_row = self.gridSize - self.row - 1
+
+    def duplicate(self):
+        return Player(self.name, self.col, self.row, self.raw_color, self.gridSize, self.fences.copy(), self.target_row)
+    
+    def getValidTurns(self, grid, opponent):
+        valid_turns = []
+
+        for movement_direction in 'wsad':
+            col_change, row_change = DIRECTIONS[movement_direction]
+
+            if self._canMove(grid, col_change, row_change):
+                active_col, active_row = self._getCoords()
+                
+                if grid._isPawn(active_col + col_change, active_row + row_change):
+                    if self._canMove(grid, col_change * 2, row_change * 2):
+                        valid_turns.append(f'p{movement_direction}')
+                else:
+                    valid_turns.append(f'p{movement_direction}')
+
+        if self._getRemainingFences() > 0:
+            
+            for orientation in 'hv':
+                for col in 'abcdefghi':
+                    for row in '123456789':
+
+                        fence_col = 'abcdefghi'.index(col)
+                        fence_row = '987654321'.index(row)
+                        
+                        if self._canPlaceFence(grid, opponent, orientation, fence_col, fence_row):
+                            valid_turns.append(f'f{orientation}{col}{row}')
+
+        return valid_turns
+    
 
     def _checkWin(self):
         return self.row == self.target_row
-
-    def _drawPawn(self, screen):
-        x_pixels, y_pixels = self.game.getPawnPixels(self.col, self.row)
-        gfxdraw.aacircle(screen, x_pixels, y_pixels, self.radius, self.color)
-        gfxdraw.filled_circle(screen, x_pixels, y_pixels, self.radius, self.color)
-        return
     
     def _getName(self):
         return self.name
@@ -54,7 +89,7 @@ class Player:
         return grid._validMove(self.col, self.row, col_change, row_change)
     
     def _placeFence(self, grid, orientation, col, row):
-        fence = Fence(orientation, col, row, self.color, self.game)
+        fence = Fence(orientation, col, row, self.color)
         self.fences.add(fence)
         grid._addFence(fence)
         return self
@@ -65,7 +100,7 @@ class Player:
 
     def _canPlaceFence(self, grid, opponent, orientation, col, row):
 
-        temp_fence = Fence(orientation, col, row, self.color, self.game)
+        temp_fence = Fence(orientation, col, row, self.color)
 
         if not grid._validFencePlacement(temp_fence):
             return False
@@ -80,12 +115,13 @@ class Player:
         
         return True
     
-    def _checkValidPath(self, grid, vfences, hfences):
+    def _checkValidPath(self, grid, vfences=None, hfences=None):
 
         if self._getShortestPath(grid, vfences, hfences) >= 0:
             return True 
     
-    def _getShortestPath(self, grid, vfences, hfences):
+    def _getShortestPath(self, grid, vfences=None, hfences=None):
+
         visited_cells = set()
         cells_to_visit = deque()
 
@@ -106,3 +142,5 @@ class Player:
                         cells_to_visit.append((new_col, new_row, distance + 1))
 
         return -1
+
+    
