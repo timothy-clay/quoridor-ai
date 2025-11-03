@@ -62,7 +62,7 @@ def minimax(game, winner, grid, players, depth, alpha, beta):
 
         return min_heuristic, best_move
 
-game = Quoridor(GUI=True, print_instructions=False, sleep=1, gs=9)
+game = Quoridor(GUI=True, print_instructions=False, sleep=0.1, gs=9)
 
 winner, grid, players = game.execute('e')
 

@@ -2,6 +2,7 @@ import pygame
 from pygame import gfxdraw
 from collections import deque
 import numpy as np
+import heapq
 
 from fence import *
 
@@ -119,27 +120,45 @@ class Player:
 
         if self._getShortestPath(grid, vfences, hfences) >= 0:
             return True 
+        
+
     
     def _getShortestPath(self, grid, vfences=None, hfences=None):
 
+        
+        start = (self.col, self.row)
+
+        open_heap = []
+        heapq.heappush(open_heap, (np.abs(self.target_row - self.row), 0, start))
+
         visited_cells = set()
-        cells_to_visit = deque()
+        distances = {start: 0}
 
-        cells_to_visit.append((self.col, self.row, 0))
+        while open_heap:
 
-        while len(cells_to_visit) > 0:
-            current_col, current_row, distance = cells_to_visit.popleft()
-            visited_cells.add((current_col, current_row))
+            total_estimated_distance, current_distance, (current_col, current_row) = heapq.heappop(open_heap)
 
             if current_row == self.target_row:
-                return distance
+                return current_distance
+
+            if (current_col, current_row) in visited_cells:
+                continue
+            visited_cells.add((current_col, current_row))
             
             for col_change, row_change in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
                 new_col = current_col + col_change
                 new_row = current_row + row_change
-                if (new_col, new_row) not in visited_cells:
-                    if grid._validMove(current_col, current_row, col_change, row_change, vfences, hfences):
-                        cells_to_visit.append((new_col, new_row, distance + 1))
+                new_coords = (new_col, new_row)
+
+                if new_coords in visited_cells:
+                    continue
+
+                if grid._validMove(current_col, current_row, col_change, row_change, vfences, hfences):
+                    new_distance = current_distance + 1
+                    if new_distance < distances.get(new_distance, float('inf')):
+                        distances[new_coords] = new_distance
+                        total_estimated_distance = new_distance + np.abs(self.target_row - new_row)
+                        heapq.heappush(open_heap, (total_estimated_distance, new_distance, new_coords))
 
         return -1
 
