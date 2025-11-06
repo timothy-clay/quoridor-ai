@@ -45,7 +45,7 @@ class Player:
             col_change, row_change = DIRECTIONS[movement_direction]
 
             if self._canMove(grid, col_change, row_change):
-                active_col, active_row = self._getCoords()
+                active_col, active_row = self.getCoords()
                 
                 if grid._isPawn(active_col + col_change, active_row + row_change):
                     if self._canMove(grid, col_change * 2, row_change * 2):
@@ -53,7 +53,7 @@ class Player:
                 else:
                     valid_turns.append(f'p{movement_direction}')
 
-        if self._getRemainingFences() > 0:
+        if self.getRemainingFences() > 0:
             
             for orientation in 'hv':
                 for col in 'abcdefghi':
@@ -71,13 +71,16 @@ class Player:
     def _checkWin(self):
         return self.row == self.target_row
     
-    def _getName(self):
+    def getName(self):
         return self.name
     
-    def _getCoords(self):
+    def getFences(self):
+        return self.fences
+    
+    def getCoords(self):
         return self.col, self.row
     
-    def _getColor(self):
+    def getColor(self):
         return self.color
 
     def _movePawn(self, grid, col_change, row_change):
@@ -95,7 +98,7 @@ class Player:
         grid._addFence(fence)
         return self
     
-    def _getRemainingFences(self):
+    def getRemainingFences(self):
         return 10 - len(self.fences)
     
 
@@ -118,12 +121,12 @@ class Player:
     
     def _checkValidPath(self, grid, vfences=None, hfences=None):
 
-        if self._getShortestPath(grid, vfences, hfences) >= 0:
+        if self.getShortestPath(grid, vfences, hfences) >= 0:
             return True 
         
 
     
-    def _getShortestPath(self, grid, vfences=None, hfences=None):
+    def getShortestPath(self, grid, vfences=None, hfences=None):
 
         
         start = (self.col, self.row)

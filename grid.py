@@ -30,7 +30,7 @@ class Grid:
 
     def _initPawns(self, player1, player2):
         for player in (player1, player2):
-            col, row = player._getCoords()
+            col, row = player.getCoords()
             self.pawns[row, col] = 1
 
     def _movePawn(self, old_col, old_row, col_change, row_change):
@@ -45,7 +45,7 @@ class Grid:
 
     def _addFence(self, fence):
 
-        col, row, orientation = fence._getCoords()
+        col, row, orientation = fence.getCoords()
 
         if orientation == 'h':
             self.hfences[row, col:col+2] = 1
@@ -57,7 +57,7 @@ class Grid:
 
     def _testFencePlacement(self, fence):
 
-        col, row, orientation = fence._getCoords()
+        col, row, orientation = fence.getCoords()
 
         temp_hfences, temp_vfences = self.hfences.copy(), self.vfences.copy()
 
@@ -69,18 +69,18 @@ class Grid:
 
         return temp_hfences, temp_vfences
 
-    def _getPawns(self):
+    def getPawns(self):
         return self.pawns
 
-    def _getHFences(self):
+    def getHFences(self):
         return self.hfences
     
-    def _getVFences(self):
+    def getVFences(self):
         return self.vfences
     
     def _validFencePlacement(self, fence):
 
-        col, row, orientation = fence._getCoords()
+        col, row, orientation = fence.getCoords()
 
         if orientation == 'h':
             # placement restrictions
@@ -93,7 +93,7 @@ class Grid:
 
             # check that col+1, row-1 is not the start of a fence
             for existing_fence in self.fences:
-                fence_col, fence_row, fence_orientation = existing_fence._getCoords()
+                fence_col, fence_row, fence_orientation = existing_fence.getCoords()
                 if fence_orientation == 'v' and fence_col == col + 1 and fence_row == row - 1:
                     return False
 
@@ -109,7 +109,7 @@ class Grid:
 
             # check that col-1, row+1 is not the start of a fence
             for existing_fence in self.fences:
-                fence_col, fence_row, fence_orientation = existing_fence._getCoords()
+                fence_col, fence_row, fence_orientation = existing_fence.getCoords()
                 if fence_orientation == 'h' and fence_col == col - 1 and fence_row == row + 1:
                     return False
 

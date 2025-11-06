@@ -9,8 +9,8 @@ class Fence:
 
         self.color = color
     
-    def _getCoords(self):
+    def getCoords(self):
         return self.col, self.row, self.orientation
     
-    def _getColor(self):
+    def getColor(self):
         return self.color
