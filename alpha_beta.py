@@ -62,7 +62,7 @@ def minimax(game, winner, grid, players, depth, alpha, beta):
 
         return min_heuristic, best_move
 
-game = Quoridor(GUI=True, print_instructions=False, sleep=1, gs=9)
+game = Quoridor(GUI=True, print_instructions=False, sleep=0.1, gs=9)
 
 winner, grid, players = game.execute('e')
 
@@ -75,12 +75,8 @@ while winner is None:
     winner, grid, players = game.execute(best_move)
 
 
-# allow for copying of game state DONE
-
-# define all possible moves from a given state DONE
-
-# allow playing test turns in copied game state (returns new game state) DONE
-
-# define heuristic function and evaluate game state using said heuristic function
-
-# actually implement minimax
+# potential improvements:
+#    store the player's optimal path and update when necessary (after a fence has been placed)
+#    approximate distances to goal in heuristic instead of calculating
+#    only check if a move is valid (i.e., doesn't block the opponent) after it's been selected
+#    iterative deepening (after previous improvements)
