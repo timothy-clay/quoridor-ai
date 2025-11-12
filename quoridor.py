@@ -1,5 +1,6 @@
 import numpy as np
 import pygame
+from pygame import gfxdraw
 import time
 
 from player import *
@@ -416,6 +417,18 @@ class Quoridor:
                                 if self.grid._isPawn(active_col + col_change, active_row + row_change):
                                     if self.active_player._canMove(self.grid, col_change * 2, row_change * 2):
                                         self.active_player._movePawn(self.grid, col_change * 2, row_change * 2)
+                                        # check winning condition
+                                        if self.active_player._checkWin():
+                                            self.current_message = self.active_player.getName() + ' Wins!'
+                                            self.current_submessage = "Press any button to exit."
+                                            mode = 'game_over'
+
+                                        # swap turn and continue
+                                        else:
+                                            self._changeTurn()
+                                            self.current_message = self.active_player.getName()
+                                            self.current_submessage = "Press 'P' to move pawn, Press 'F' to place a fence."
+                                            mode = None 
                                     else:
                                         self.current_message = self.active_player.getName()
                                         self.current_submessage = "Invalid pawn movement. Choose a new action (P/F)."
@@ -424,20 +437,20 @@ class Quoridor:
                                 # move one cell
                                 else:
                                     self.active_player._movePawn(self.grid, col_change, row_change)
+                                        # check winning condition
+                                    if self.active_player._checkWin():
+                                        self.current_message = self.active_player.getName() + ' Wins!'
+                                        self.current_submessage = "Press any button to exit."
+                                        mode = 'game_over'
+
+                                    # swap turn and continue
+                                    else:
+                                        self._changeTurn()
+                                        self.current_message = self.active_player.getName()
+                                        self.current_submessage = "Press 'P' to move pawn, Press 'F' to place a fence."
+                                        mode = None 
                                 
-                                # check winning condition
-                                if self.active_player._checkWin():
-                                    self.current_message = self.active_player.getName() + ' Wins!'
-                                    self.current_submessage = "Press any button to exit."
-                                    mode = 'game_over'
-
-                                # swap turn and continue
-                                else:
-                                    self._changeTurn()
-                                    self.current_message = self.active_player.getName()
-                                    self.current_submessage = "Press 'P' to move pawn, Press 'F' to place a fence."
-                                    mode = None 
-
+                                
                             # print if invalid move
                             else:
                                 self.current_message = self.active_player.getName()
