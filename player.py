@@ -89,6 +89,43 @@ class Player:
 
         return valid_turns
     
+    def checkMoveValidity(self, grid, opponent, move):
+        """
+        Get a list of all possible turns a player can take from their current position / game state. 
+        """
+
+        if move[0] == 'p':
+            if move[1] in 'wsad':
+                movement_direction = move[1]
+                col_change, row_change = DIRECTIONS[movement_direction]
+                if self._canMove(grid, col_change, row_change):
+                    active_col, active_row = self.getCoords()
+                    
+                    # check if pawn jump is needed / possible
+                    if grid._isPawn(active_col + col_change, active_row + row_change):
+                        if self._canMove(grid, col_change * 2, row_change * 2):
+                            return True
+                    else:
+                        return True
+
+
+
+        elif move[0] == 'f':
+        # check fence placement options
+            if self.getRemainingFences() > 0:
+
+                if move[1] in 'hv':
+                    if move[2] in 'abcdefghi':
+                        if move[3] in '987654321':
+                            fence_col = 'abcdefghi'.index(move[2])
+                            fence_row = '987654321'.index(move[3])
+                            
+                            # check if the placement is valid and store move if so
+                            if self._canPlaceFence(grid, opponent, move[1], fence_col, fence_row):
+                                return True
+
+        return False
+    
 
     def getName(self):
         """

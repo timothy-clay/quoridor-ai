@@ -2,6 +2,7 @@ import numpy as np
 import pygame
 from pygame import gfxdraw
 import time
+import torch
 
 from player import *
 from grid import *
@@ -60,6 +61,10 @@ class Quoridor:
         self.print_messages = print_messages
         self.message_space = self.margin if self.print_messages else 0
 
+        # game info for DQN purposes
+        self.num_actions = 4 + 8**2 * 2
+        self.state_dim = 9**2 * 2 + 2 + 2 # horizontal and fence grid (9**2 * 2), player 1 location (2), player 2 location (2)
+
         # create the display if GUI is specified
         if self.GUI:
             pygame.init()
@@ -89,6 +94,23 @@ class Quoridor:
                         grid=grid, 
                         players=players, 
                         active_player=active_player)
+    
+
+    def reset(self):
+        """
+        Reset the game state.
+        """
+        self.grid = Grid(self.gridSize)
+        self.player1 = Player('Player 1', self.gridSize // 2, self.gridSize-1, self.colors[0], self.gridSize)
+        self.player2 = Player('Player 2', self.gridSize // 2, 0, self.colors[1], self.gridSize)
+
+        # put the players on the grid
+        self.grid._initPawns(self.player1, self.player2)
+
+        # keep track of which player's turn it is
+        self.active_player = self.player1
+        self.inactive_player = self.player2
+
 
     def _changeTurn(self):
         """
@@ -187,9 +209,17 @@ class Quoridor:
             'active_player':self.active_player, 
             'inactive_player': self.inactive_player
         }
+
+        player1_path = players['player1'].getShortestPath(self.grid)
+        player2_path = players['player2'].getShortestPath(self.grid)
+
+        player1_win = 10 * int(self.player1.row == self.player1.target_row)
+        player2_win = 10 * int(self.player2.row == self.player2.target_row)
+
+        reward = player1_win + player2_path - player1_path - player2_win
         
         # return the state of the board
-        return winner, self.grid, players 
+        return winner, self.grid, players, reward
     
 
     def getPawnPixels(self, x, y):
@@ -219,6 +249,19 @@ class Quoridor:
             y_pixels = int(y * self.cellSize + 2 + self.margin * self.title_ratio)
 
         return x_pixels, y_pixels
+    
+    def getState(self, grid, players):
+        hfences = grid.getHFences()
+        vfences = grid.getVFences()
+
+        active_col, active_row = players['active_player'].getCoords()
+        opp_col, opp_row = players['inactive_player'].getCoords()
+
+        # for FFN
+        state = np.concatenate([hfences.flatten(), vfences.flatten(), np.array([active_col, active_row, opp_col, opp_row])])
+
+        return state
+
     
     def _printMessage(self, screen, text, subtext, color):
         """
