@@ -61,6 +61,8 @@ def train_dqn(game, episodes=10000, batch_size=64, gamma=0.99, lr=1e-3, epsilon_
     # training loop
     for episode in tqdm(range(episodes)):
 
+        game.reset()
+
         # get current state
         winner, grid, players = game.execute('e')
         state = game.getState(grid, players)
@@ -70,16 +72,26 @@ def train_dqn(game, episodes=10000, batch_size=64, gamma=0.99, lr=1e-3, epsilon_
         if players['active_player'] == players['player1']:
             current_player = 1
 
+        episode_length = 0
+
         # loop until game ends
-        while not done:
+        while not done and episode_length < 100:
             
             # get all legal moves for the active player
-            candidate_moves = players['active_player'].getValidTurns(grid, players['inactive_player'])
-            candidate_ids = [ALL_ACTIONS.index(move) for move in candidate_moves]
+            #candidate_moves = players['active_player'].getValidTurns(grid, players['inactive_player'])
+            #candidate_ids = [ALL_ACTIONS.index(move) for move in candidate_moves]
 
             # epsilon-greedy
             if np.random.random() < epsilon:
-                action_idx = np.random.choice(candidate_ids)
+
+                shuffled_actions = random.sample(ALL_ACTIONS, len(ALL_ACTIONS))
+
+                for candidate_action in shuffled_actions:
+                    valid_move = players['active_player'].checkMoveValidity(grid, players['inactive_player'], candidate_action)
+                    if valid_move:
+                        action_idx = ALL_ACTIONS.index(candidate_action)
+                        break
+                    
             
             else:
 
@@ -87,14 +99,11 @@ def train_dqn(game, episodes=10000, batch_size=64, gamma=0.99, lr=1e-3, epsilon_
                 s_tensor = torch.tensor(state).float().unsqueeze(0)
                 q_values = policy_net(s_tensor)[0].detach().numpy()
 
-                # remove illegal actions
-                masked_q = np.full_like(q_values, -1e9)
-
-                # replace legal actions with their actual q values
-                masked_q[candidate_ids] = q_values[candidate_ids]
-
-                # choose action with biggest expected q value
-                action_idx = int(np.argmax(masked_q))
+                for candidate_id in np.argsort(q_values):
+                    valid_move = players['active_player'].checkMoveValidity(grid, players['inactive_player'], ALL_ACTIONS[action_idx])
+                    if valid_move:
+                        action_idx = candidate_id
+                        break
 
             # take action and get next state
             winner, grid, players, reward = game.execute(ALL_ACTIONS[action_idx])
@@ -148,6 +157,8 @@ def train_dqn(game, episodes=10000, batch_size=64, gamma=0.99, lr=1e-3, epsilon_
                 loss.backward()
                 optimizer.step()
 
+            episode_length += 1
+
         # epsilon update
         epsilon = max(epsilon_end, epsilon * epsilon_decay)
 
@@ -158,8 +169,9 @@ def train_dqn(game, episodes=10000, batch_size=64, gamma=0.99, lr=1e-3, epsilon_
         if episode % 200 == 0:
             print(f"Episode {episode} | epsilon={epsilon:.3f}")
 
+
     return policy_net
 
 
-game = Quoridor()   # Replace with your real environment
+game = Quoridor(GUI=False)#True, sleep=0.01)   # Replace with your real environment
 trained_net = train_dqn(game)

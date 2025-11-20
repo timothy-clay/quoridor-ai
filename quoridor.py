@@ -93,6 +93,23 @@ class Quoridor:
                         grid=grid, 
                         players=players, 
                         active_player=active_player)
+    
+
+    def reset(self):
+        """
+        Reset the game state.
+        """
+        self.grid = Grid(self.gridSize)
+        self.player1 = Player('Player 1', self.gridSize // 2, self.gridSize-1, self.colors[0], self.gridSize)
+        self.player2 = Player('Player 2', self.gridSize // 2, 0, self.colors[1], self.gridSize)
+
+        # put the players on the grid
+        self.grid._initPawns(self.player1, self.player2)
+
+        # keep track of which player's turn it is
+        self.active_player = self.player1
+        self.inactive_player = self.player2
+
 
     def _changeTurn(self):
         """
