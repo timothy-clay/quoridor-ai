@@ -173,5 +173,5 @@ def train_dqn(game, episodes=10000, batch_size=64, gamma=0.99, lr=1e-3, epsilon_
     return policy_net
 
 
-game = Quoridor(GUI=False)#True, sleep=0.01)   # Replace with your real environment
+game = Quoridor(GUI=True, sleep=0.01)   # Replace with your real environment
 trained_net = train_dqn(game)

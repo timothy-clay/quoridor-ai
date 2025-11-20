@@ -141,8 +141,6 @@ class Quoridor:
         The command "e" returns the current state of the game. 
         """
 
-        reward = 0
-
         # export current game state
         if command[0].lower() == 'e':
 
@@ -210,6 +208,14 @@ class Quoridor:
             'active_player':self.active_player, 
             'inactive_player': self.inactive_player
         }
+
+        player1_path = players['player1'].getShortestPath(self.grid)
+        player2_path = players['player2'].getShortestPath(self.grid)
+
+        player1_win = 10 * int(self.player1.row == self.player1.target_row)
+        player2_win = 10 * int(self.player2.row == self.player2.target_row)
+
+        reward = player1_win + player2_path - player1_path - player2_win
         
         # return the state of the board
         return winner, self.grid, players, reward
