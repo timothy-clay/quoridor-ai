@@ -1,6 +1,7 @@
 import numpy as np
 import pygame
 import time
+import torch
 
 from player import *
 from grid import *
@@ -58,6 +59,10 @@ class Quoridor:
         # whether to print messages in GUI and how much extra space to allocate
         self.print_messages = print_messages
         self.message_space = self.margin if self.print_messages else 0
+
+        # game info for DQN purposes
+        self.num_actions = 4 + 8**2 * 2
+        self.state_dim = 9**2 * 2 + 2 + 2 # horizontal and fence grid (9**2 * 2), player 1 location (2), player 2 location (2)
 
         # create the display if GUI is specified
         if self.GUI:
@@ -118,6 +123,8 @@ class Quoridor:
 
         The command "e" returns the current state of the game. 
         """
+
+        reward = 0
 
         # export current game state
         if command[0].lower() == 'e':
@@ -188,7 +195,7 @@ class Quoridor:
         }
         
         # return the state of the board
-        return winner, self.grid, players 
+        return winner, self.grid, players, reward
     
 
     def getPawnPixels(self, x, y):
@@ -218,6 +225,19 @@ class Quoridor:
             y_pixels = int(y * self.cellSize + 2 + self.margin * self.title_ratio)
 
         return x_pixels, y_pixels
+    
+    def getState(self, grid, players):
+        hfences = grid.getHFences()
+        vfences = grid.getVFences()
+
+        active_col, active_row = players['active_player'].getCoords()
+        opp_col, opp_row = players['inactive_player'].getCoords()
+
+        # for FFN
+        state = np.concatenate([hfences.flatten(), vfences.flatten(), np.array([active_col, active_row, opp_col, opp_row])])
+
+        return state
+
     
     def _printMessage(self, screen, text, subtext, color):
         """
