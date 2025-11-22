@@ -74,7 +74,7 @@ class Quoridor:
 
         # game info for DQN purposes
         self.num_actions = 4 + 8**2 * 2
-        self.state_dim = 9**2 * 2 + 2 + 2 # horizontal and fence grid (9**2 * 2), player 1 location (2), player 2 location (2)
+        self.state_dim = 9**2 * 2 + 2 + 2 + 1 # horizontal and fence grid (9**2 * 2), player 1 location (2), player 2 location (2)
 
         # create the display if GUI is specified
         if self.GUI:
@@ -231,10 +231,10 @@ class Quoridor:
         player1_path = self.player1.getShortestPath(self.grid)
         player2_path = self.player2.getShortestPath(self.grid)
 
-        player1_win = 50 * int(self.player1.row == self.player1.target_row)
-        player2_win = 50 * int(self.player2.row == self.player2.target_row)
+        player1_win = int(self.player1.row == self.player1.target_row)
+        player2_win = int(self.player2.row == self.player2.target_row)
 
-        reward = player1_win + (player1_orig_path - player1_path) + (player2_path - player2_orig_path) - player2_win
+        reward = player1_win + 0.01 * (player1_orig_path - player1_path) + 0.01 * (player2_path - player2_orig_path) - player2_win
 
         # ideas: penalize fence placements?
         
@@ -277,8 +277,10 @@ class Quoridor:
         active_col, active_row = players['active_player'].getCoords()
         opp_col, opp_row = players['inactive_player'].getCoords()
 
+        active_player = 0 if players['active_player'] == players['player1'] else 1
+
         # for FFN
-        state = np.concatenate([hfences.flatten(), vfences.flatten(), np.array([active_col, active_row, opp_col, opp_row])])
+        state = np.concatenate([hfences.flatten(), vfences.flatten(), np.array([active_col, active_row, opp_col, opp_row, active_player])])
 
         return state
 

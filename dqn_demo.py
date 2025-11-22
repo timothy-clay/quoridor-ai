@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 
 class ReplayBuffer:
-    def __init__(self, capacity=100000):
+    def __init__(self, capacity=500000):
         self.buffer = deque(maxlen=capacity)
 
     def add(self, s, a, r, s2, d):
@@ -27,8 +27,8 @@ class ReplayBuffer:
     def __len__(self):
         return len(self.buffer)
 
-def train_dqn(game, episodes=10000, batch_size=64, gamma=0.99, lr=1e-3, epsilon_start=1.0, epsilon_end=0.05, 
-              epsilon_decay=0.9995, target_update_interval=200):
+def train_dqn(game, episodes=10000, batch_size=64, gamma=0.99, lr=1e-4, epsilon_start=1.0, epsilon_end=0.05, 
+              epsilon_decay=0.9995, target_update_interval=1):
     
     device = "cpu"#torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     print("Using device:", device)
@@ -63,7 +63,7 @@ def train_dqn(game, episodes=10000, batch_size=64, gamma=0.99, lr=1e-3, epsilon_
 
         # define starting player
         if players['active_player'] == players['player1']:
-            current_player = 1
+            current_player = 0
 
         episode_length = 0
         episode_loss = 0
@@ -93,7 +93,7 @@ def train_dqn(game, episodes=10000, batch_size=64, gamma=0.99, lr=1e-3, epsilon_
                 s_tensor = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
                 q_values = policy_net(s_tensor)[0].detach().cpu().numpy()
 
-                for candidate_id in np.argsort(q_values):
+                for candidate_id in np.argsort(q_values)[::-1]:
                     valid_move = players['active_player'].checkMoveValidity(grid, players['inactive_player'], ALL_ACTIONS[candidate_id])
                     if valid_move:
                         action_idx = candidate_id
@@ -113,10 +113,10 @@ def train_dqn(game, episodes=10000, batch_size=64, gamma=0.99, lr=1e-3, epsilon_
 
             # update state and swap players
             state = next_state
-            current_player = 3 - current_player 
+            current_player = 1 - current_player 
 
             # update model
-            if len(buffer) >= batch_size:
+            if len(buffer) >= 5000:
 
                 # sample from the replay buffer
                 states, actions, rewards, next_states, dones = buffer.sample(batch_size)
@@ -149,6 +149,7 @@ def train_dqn(game, episodes=10000, batch_size=64, gamma=0.99, lr=1e-3, epsilon_
                 # update gradients
                 optimizer.zero_grad()
                 loss.backward()
+
                 optimizer.step()
 
                 episode_loss += loss
