@@ -18,6 +18,7 @@ ALL_ACTIONS = ['pw','ps','pa','pd','fha2','fha3','fha4','fha5','fha6','fha7','fh
                'fvg6','fvg7','fvg8','fvh9','fvh2','fvh3','fvh4','fvh5','fvh6','fvh7','fvh8','fvi9','fvi2','fvi3',
                'fvi4','fvi5','fvi6','fvi7','fvi8']
 
+
 class ReplayBuffer:
     def __init__(self, capacity=100000):
         self.buffer = deque(maxlen=capacity)
@@ -40,6 +41,9 @@ class ReplayBuffer:
 def train_dqn(game, episodes=10000, batch_size=64, gamma=0.99, lr=1e-3, epsilon_start=1.0, epsilon_end=0.05, 
               epsilon_decay=0.9995, target_update_interval=200):
     
+    device = "cpu"#torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    print("Using device:", device)
+    
     # what the input for the DQN is going to be
         # horizontal fences, vertical fences, self location, opponent location
     state_dim = game.state_dim
@@ -48,8 +52,8 @@ def train_dqn(game, episodes=10000, batch_size=64, gamma=0.99, lr=1e-3, epsilon_
     n_actions = game.num_actions
 
     # create policy and target networks (target network is a copy of the policy network)
-    policy_net = DQN(state_dim, n_actions)
-    target_net = DQN(state_dim, n_actions)
+    policy_net = DQN(state_dim, n_actions).to(device)
+    target_net = DQN(state_dim, n_actions).to(device)
     target_net.load_state_dict(policy_net.state_dict())
     target_net.eval()
 
@@ -64,7 +68,7 @@ def train_dqn(game, episodes=10000, batch_size=64, gamma=0.99, lr=1e-3, epsilon_
         game.reset()
 
         # get current state
-        winner, grid, players = game.execute('e')
+        winner, grid, players, reward = game.execute('e')
         state = game.getState(grid, players)
         done = False
 
@@ -73,6 +77,7 @@ def train_dqn(game, episodes=10000, batch_size=64, gamma=0.99, lr=1e-3, epsilon_
             current_player = 1
 
         episode_length = 0
+        episode_loss = 0
 
         # loop until game ends
         while not done and episode_length < 100:
@@ -96,11 +101,11 @@ def train_dqn(game, episodes=10000, batch_size=64, gamma=0.99, lr=1e-3, epsilon_
             else:
 
                 # get predicted q values using state tensor
-                s_tensor = torch.tensor(state).float().unsqueeze(0)
-                q_values = policy_net(s_tensor)[0].detach().numpy()
+                s_tensor = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+                q_values = policy_net(s_tensor)[0].detach().cpu().numpy()
 
                 for candidate_id in np.argsort(q_values):
-                    valid_move = players['active_player'].checkMoveValidity(grid, players['inactive_player'], ALL_ACTIONS[action_idx])
+                    valid_move = players['active_player'].checkMoveValidity(grid, players['inactive_player'], ALL_ACTIONS[candidate_id])
                     if valid_move:
                         action_idx = candidate_id
                         break
@@ -128,11 +133,11 @@ def train_dqn(game, episodes=10000, batch_size=64, gamma=0.99, lr=1e-3, epsilon_
                 states, actions, rewards, next_states, dones = buffer.sample(batch_size)
 
                 # convert to tensors
-                states_t = torch.tensor(states, dtype=torch.float32)
-                actions_t = torch.tensor(actions, dtype=torch.long)
-                rewards_t = torch.tensor(rewards, dtype=torch.float32)
-                next_states_t = torch.tensor(next_states, dtype=torch.float32)
-                dones_t = torch.tensor(dones, dtype=torch.float32)
+                states_t = torch.tensor(states, dtype=torch.float32, device=device)
+                actions_t = torch.tensor(actions, dtype=torch.long, device=device)
+                rewards_t = torch.tensor(rewards, dtype=torch.float32, device=device)
+                next_states_t = torch.tensor(next_states, dtype=torch.float32, device=device)
+                dones_t = torch.tensor(dones, dtype=torch.float32, device=device)
 
                 # get current q value predictions for each action
                 q_values = policy_net(states_t)
@@ -157,6 +162,8 @@ def train_dqn(game, episodes=10000, batch_size=64, gamma=0.99, lr=1e-3, epsilon_
                 loss.backward()
                 optimizer.step()
 
+                episode_loss += loss
+
             episode_length += 1
 
         # epsilon update
@@ -167,11 +174,12 @@ def train_dqn(game, episodes=10000, batch_size=64, gamma=0.99, lr=1e-3, epsilon_
             target_net.load_state_dict(policy_net.state_dict())
 
         if episode % 200 == 0:
-            print(f"Episode {episode} | epsilon={epsilon:.3f}")
+            print(f"Episode {episode} | epsilon={epsilon:.3f} | loss={episode_loss:.3f}")
 
 
     return policy_net
 
 
-game = Quoridor(GUI=True, sleep=0.01)   # Replace with your real environment
+game = Quoridor(GUI=False)#True, sleep=0.01)   # Replace with your real environment
 trained_net = train_dqn(game)
+torch.save(trained_net.state_dict(), 'quoridor_dqn.pth')
