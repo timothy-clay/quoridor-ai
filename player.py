@@ -35,6 +35,8 @@ class Player:
         self.fences = fences if fences is not None else set()
         self.target_row = target_row if target_row is not None else self.gridSize - self.row - 1
 
+        self.visited_counts = np.zeros(shape=(gridSize, gridSize))
+
 
     def duplicate(self):
         """
@@ -89,10 +91,12 @@ class Player:
 
         return valid_turns
     
-    def checkMoveValidity(self, grid, opponent, move):
+    def checkMoveValidity(self, game, grid, opponent, move):
         """
         Get a list of all possible turns a player can take from their current position / game state. 
         """
+
+        valid_move = False
 
         if move[0] == 'p':
             if move[1] in 'wsad':
@@ -104,16 +108,13 @@ class Player:
                     # check if pawn jump is needed / possible
                     if grid._isPawn(active_col + col_change, active_row + row_change):
                         if self._canMove(grid, col_change * 2, row_change * 2):
-                            return True
+                            valid_move = True
                     else:
-                        return True
-
-
+                        valid_move = True
 
         elif move[0] == 'f':
         # check fence placement options
             if self.getRemainingFences() > 0:
-
                 if move[1] in 'hv':
                     if move[2] in 'abcdefghi':
                         if move[3] in '987654321':
@@ -122,9 +123,28 @@ class Player:
                             
                             # check if the placement is valid and store move if so
                             if self._canPlaceFence(grid, opponent, move[1], fence_col, fence_row):
-                                return True
+                                valid_move = True
+        
+        if valid_move:                
+            new_game = game.duplicate()
+            new_winner, new_grid, new_players, new_reward = new_game.execute(move)
+            if new_players['player1'].getShortestPath(new_grid) < 0 or new_players['player2'].getShortestPath(new_grid) < 0:
+                valid_move = False
 
-        return False
+        return valid_move
+    
+    
+    def _update_counts(self, col, row):
+        self.visited_counts[row, col] += 1
+        return
+    
+    
+    def getCellVisits(self, col, row):
+        return self.visited_counts[row, col]
+    
+
+    def getVisitedCounts(self):
+        return self.visited_counts
     
 
     def getName(self):
@@ -188,12 +208,22 @@ class Player:
 
             if (current_col, current_row) in visited_cells:
                 continue
+
             visited_cells.add((current_col, current_row))
             
             for col_change, row_change in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
                 new_col = current_col + col_change
                 new_row = current_row + row_change
                 new_coords = (new_col, new_row)
+
+                if new_coords in visited_cells:
+                    continue
+
+                ## DOUBLE COL AND ROW CHANGE IF THERE IS A PAWN THERE
+                if grid._isPawn(new_col, new_row):
+                    new_col = current_col + 2 * col_change
+                    new_row = current_row + 2 * row_change
+                    new_coords = (new_col, new_row)
 
                 if new_coords in visited_cells:
                     continue
@@ -227,6 +257,8 @@ class Player:
         # update coordinates
         self.col += col_change
         self.row += row_change
+
+        self._update_counts(self.col, self.row)
 
         return
     

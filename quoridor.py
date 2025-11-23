@@ -74,7 +74,7 @@ class Quoridor:
 
         # game info for DQN purposes
         self.num_actions = 4 + 8**2 * 2
-        self.state_dim = 9**2 * 2 + 2 + 2 + 1 # horizontal and fence grid (9**2 * 2), player 1 location (2), player 2 location (2)
+        self.state_dim = 9**2 * 3 + 2 + 2  # horizontal and fence grid and visited cells (9**2 * 3), player 1 location (2), player 2 location (2)
 
         # create the display if GUI is specified
         if self.GUI:
@@ -153,8 +153,12 @@ class Quoridor:
         The command "e" returns the current state of the game. 
         """
 
-        player1_orig_path = self.player1.getShortestPath(self.grid)
-        player2_orig_path = self.player2.getShortestPath(self.grid)
+        active_orig_path = self.active_player.getShortestPath(self.grid)
+        inactive_orig_path = self.inactive_player.getShortestPath(self.grid)
+
+        prev_visits = 0
+        fence_penalty = 0
+        win_reward = 0
 
         # export current game state
         if command[0].lower() == 'e':
@@ -189,10 +193,12 @@ class Quoridor:
 
                     # move 2 cells in the specified direction if so (and if possible)
                     if self.active_player._canMove(self.grid, col_change * 2, row_change * 2):
+                        prev_visits = self.active_player.getCellVisits(active_col + col_change, active_row + row_change)
                         self.active_player._movePawn(self.grid, col_change * 2, row_change * 2)
                 
                 # otherwise, move only 1 cell in the specified direction
                 else:
+                    prev_visits = self.active_player.getCellVisits(active_col + col_change, active_row + row_change)
                     self.active_player._movePawn(self.grid, col_change, row_change)
 
         # place fence
@@ -207,10 +213,15 @@ class Quoridor:
             if self.active_player.getRemainingFences() > 0:
                 if self.active_player._canPlaceFence(self.grid, self.inactive_player, orientation, fence_col, fence_row):
                     self.active_player._placeFence(self.grid, orientation, fence_col, fence_row)
+                    fence_penalty = 1
+
+        active_path = self.active_player.getShortestPath(self.grid)
+        inactive_path = self.inactive_player.getShortestPath(self.grid)
 
         # check if there's a winner
         if self.active_player._checkWin():
             winner = self.active_player
+            win_reward = 1
 
         # swap turns if no winner
         else:
@@ -228,15 +239,13 @@ class Quoridor:
             'inactive_player': self.inactive_player
         }
 
-        player1_path = self.player1.getShortestPath(self.grid)
-        player2_path = self.player2.getShortestPath(self.grid)
+        reward = win_reward \
+            + 0.01 * (active_orig_path - active_path) \
+            - 0.01 * (inactive_orig_path - inactive_path) \
+            - 0.05 * fence_penalty \
+            - 0.01 * prev_visits
 
-        player1_win = int(self.player1.row == self.player1.target_row)
-        player2_win = int(self.player2.row == self.player2.target_row)
-
-        reward = player1_win + 0.01 * (player1_orig_path - player1_path) + 0.01 * (player2_path - player2_orig_path) - player2_win
-
-        # ideas: penalize fence placements?
+        # ideas: penalize fence placements? penalize game length?
         
         # return the state of the board
         return winner, self.grid, players, reward
@@ -273,14 +282,29 @@ class Quoridor:
     def getState(self, grid, players):
         hfences = grid.getHFences()
         vfences = grid.getVFences()
+        visited_cells = players['active_player'].getVisitedCounts()
 
         active_col, active_row = players['active_player'].getCoords()
-        opp_col, opp_row = players['inactive_player'].getCoords()
+        active_loc = np.zeros((self.gridSize, self.gridSize))
+        active_loc[active_row, active_col] = 1
 
-        active_player = 0 if players['active_player'] == players['player1'] else 1
+        opp_col, opp_row = players['inactive_player'].getCoords()
+        opp_loc = np.zeros((self.gridSize, self.gridSize))
+        opp_loc[opp_row, opp_col] = 1
+
+        active_fences_remaining = np.ones((self.gridSize, self.gridSize)) * players['active_player'].getRemainingFences()
+        opp_fences_remaining = np.ones((self.gridSize, self.gridSize)) * players['inactive_player'].getRemainingFences()
 
         # for FFN
-        state = np.concatenate([hfences.flatten(), vfences.flatten(), np.array([active_col, active_row, opp_col, opp_row, active_player])])
+        state = np.stack([
+            hfences,
+            vfences,
+            visited_cells,
+            active_loc,
+            opp_loc,
+            active_fences_remaining,
+            opp_fences_remaining
+        ], axis=0)
 
         return state
 

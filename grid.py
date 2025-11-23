@@ -76,6 +76,12 @@ class Grid:
         """
         Check if there is a pawn at a given coordinate pair. 
         """
+        if col > 8 or col < 0:
+            return False
+        
+        if row > 8 or row < 0:
+            return False
+        
         return self.pawns[row, col] == 1
 
 

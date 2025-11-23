@@ -40,9 +40,11 @@ if __name__ == "__main__":
         s_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
         q_values = trained_agent(s_tensor)[0].detach().cpu().numpy()
 
+        print(q_values)
+
 
         for candidate_id in np.argsort(q_values):
-            valid_move = players['active_player'].checkMoveValidity(grid, players['inactive_player'], ALL_ACTIONS[candidate_id])
+            valid_move = players['active_player'].checkMoveValidity(game, grid, players['inactive_player'], ALL_ACTIONS[candidate_id])
             if valid_move:
                 action_idx = candidate_id
                 break
