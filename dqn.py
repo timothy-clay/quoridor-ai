@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DQN(nn.Module):
-    def __init__(self, input_shape, num_actions):
+    def __init__(self, num_actions):
         super().__init__()
         
         self.conv = nn.Sequential(

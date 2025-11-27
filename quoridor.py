@@ -74,8 +74,7 @@ class Quoridor:
 
         # game info for DQN purposes
         self.num_actions = 4 + 8**2 * 2
-        self.state_dim = 9**2 * 3 + 2 + 2  # horizontal and fence grid and visited cells (9**2 * 3), player 1 location (2), player 2 location (2)
-
+        
         # create the display if GUI is specified
         if self.GUI:
             pygame.init()

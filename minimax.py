@@ -6,8 +6,8 @@ def heuristic(players, grid):
     player1 = players['player1']
     player2 = players['player2']
 
-    player1_path = player1._getShortestPath(grid)
-    player2_path = player2._getShortestPath(grid)
+    player1_path = player1.getShortestPath(grid)
+    player2_path = player2.getShortestPath(grid)
 
     player1_win = 10 * int(player1.row == player1.target_row)
     player2_win = 10 * int(player2.row == player2.target_row)
@@ -29,7 +29,7 @@ def minimax(game, winner, grid, players, depth, alpha, beta):
         max_heuristic = float('-inf')
         for move in options:
             new_game = game.duplicate()
-            new_winner, new_grid, new_players = new_game.execute(move)
+            new_winner, new_grid, new_players, new_reward = new_game.execute(move)
             eval, _ = minimax(new_game, new_winner, new_grid, new_players, depth - 1, alpha, beta)
 
             if eval > max_heuristic:
@@ -48,7 +48,7 @@ def minimax(game, winner, grid, players, depth, alpha, beta):
         min_heuristic = float('inf')
         for move in options:
             new_game = game.duplicate()
-            new_winner, new_grid, new_players = new_game.execute(move)
+            new_winner, new_grid, new_players, new_reward = new_game.execute(move)
             eval, _ = minimax(new_game, new_winner, new_grid, new_players, depth - 1, alpha, beta)
 
             if eval < min_heuristic:
@@ -62,17 +62,17 @@ def minimax(game, winner, grid, players, depth, alpha, beta):
 
         return min_heuristic, best_move
 
-game = Quoridor(GUI=True, print_instructions=False, sleep=0.1, gs=9)
+if __name__=='__main__':
+    game = Quoridor(GUI=True, print_messages=False, sleep=0.1, gs=9)
 
-winner, grid, players = game.execute('e')
+    winner, grid, players, reward = game.execute('e')
 
-winner = None
-while winner is None:
+    winner = None
+    while winner is None:
 
-    score, best_move = minimax(game, winner, grid, players, depth=2, alpha=float('-inf'), beta=float('inf'))
+        score, best_move = minimax(game, winner, grid, players, depth=2, alpha=float('-inf'), beta=float('inf'))
 
-    print(score, best_move)
-    winner, grid, players = game.execute(best_move)
+        winner, grid, players, reward = game.execute(best_move)
 
 
 # potential improvements:

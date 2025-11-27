@@ -213,12 +213,11 @@ def train_dqn(game, episodes=10000, batch_size=64, gamma=0.5, lr_p1=1e-4, lr_p2=
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     print("Using device:", device)
     
-    state_dim = game.state_dim
     n_actions = game.num_actions
 
     # create policy and target networks (target network is a copy of the policy network)
-    p1_policy_net = DQN(state_dim, n_actions).to(device)
-    p1_target_net = DQN(state_dim, n_actions).to(device)
+    p1_policy_net = DQN(n_actions).to(device)
+    p1_target_net = DQN(n_actions).to(device)
 
     try:
         p1_policy_net.load_state_dict(torch.load(f'p1_policy_{CHECKPOINT - 1}.pth'))
@@ -228,8 +227,8 @@ def train_dqn(game, episodes=10000, batch_size=64, gamma=0.5, lr_p1=1e-4, lr_p2=
     p1_target_net.load_state_dict(p1_policy_net.state_dict())
     p1_target_net.eval()
 
-    p2_policy_net = DQN(state_dim, n_actions).to(device)
-    p2_target_net = DQN(state_dim, n_actions).to(device)
+    p2_policy_net = DQN(n_actions).to(device)
+    p2_target_net = DQN(n_actions).to(device)
 
     try:
         p2_policy_net.load_state_dict(torch.load(f'p2_policy_{CHECKPOINT - 1}.pth'))
