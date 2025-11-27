@@ -35,10 +35,11 @@ if __name__ == "__main__":
                         terminate = True
             break
         
-        state = game.getState(grid, players)
+        state, prev_move_onehot = game.getState(grid, players)
 
         s_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
-        q_values = trained_agent(s_tensor)[0].detach().cpu().numpy()
+        pmo_tensor = torch.tensor(prev_move_onehot, dtype=torch.float32).unsqueeze(0)
+        q_values = trained_agent(s_tensor, pmo_tensor)[0].detach().cpu().numpy()
 
         print(q_values)
 

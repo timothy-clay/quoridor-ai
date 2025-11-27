@@ -208,7 +208,7 @@ def visualize_game(P1, P2, device='cpu'):
     pygame.quit()
 
 
-def train_dqn(game, episodes=10000, batch_size=64, gamma=0.5, lr_p1=1e-4, lr_p2=1e-4, epsilon_start=0.05, epsilon_end=0.05, epsilon_decay=0.9995):
+def train_dqn(game, episodes=10000, batch_size=64, gamma=0.5, lr_p1=1e-4, lr_p2=1e-4, epsilon_start=1, epsilon_end=0.05, epsilon_decay=0.9995):
     
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     print("Using device:", device)
@@ -250,7 +250,6 @@ def train_dqn(game, episodes=10000, batch_size=64, gamma=0.5, lr_p1=1e-4, lr_p2=
 
     total_steps = 0
     train_steps = 0
-    p1_train_counter = 0
 
     for episode in tqdm(range(1, episodes + 1)):
 
@@ -311,16 +310,14 @@ def train_dqn(game, episodes=10000, batch_size=64, gamma=0.5, lr_p1=1e-4, lr_p2=
                         train_steps += 1
 
                     if len(rb_p1) >= 2000:
-                        p1_train_counter += 1
-                        if (p1_train_counter % 5) == 0:
-                            s_b, pmo_b, a_b, r_b, s2_b, pmo2_b, done_b = rb_p1.sample(batch_size)
-                            loss_p1 = calc_loss(p1_policy_net, p1_target_net, s_b, pmo_b, a_b, r_b, s2_b, pmo2_b, done_b, gamma, device)
-                            opt_p1.zero_grad()
-                            loss_p1.backward()
+                        s_b, pmo_b, a_b, r_b, s2_b, pmo2_b, done_b = rb_p1.sample(batch_size)
+                        loss_p1 = calc_loss(p1_policy_net, p1_target_net, s_b, pmo_b, a_b, r_b, s2_b, pmo2_b, done_b, gamma, device)
+                        opt_p1.zero_grad()
+                        loss_p1.backward()
 
-                            torch.nn.utils.clip_grad_norm_(p1_policy_net.parameters(), 1.0)
-                            opt_p1.step()
-                            train_steps += 1
+                        torch.nn.utils.clip_grad_norm_(p1_policy_net.parameters(), 1.0)
+                        opt_p1.step()
+                        train_steps += 1
 
                     if train_steps > 0 and train_steps % 1000 == 0:
                         p1_target_net.load_state_dict(p1_policy_net.state_dict())
