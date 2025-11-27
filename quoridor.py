@@ -793,12 +793,15 @@ class Quoridor:
                                 else:
                                     self.current_message = self.active_player.getName()
                                     self.current_submessage = "Invalid fence placement. Choose a new action (P/F)."
+                                    mode = None
                             else:
                                 self.current_message = self.active_player.getName()
                                 self.current_submessage = "No remaining fences. Choose a new action (P/F)."
+                                mode = None
                         else:
                             self.current_message = self.active_player.getName()
                             self.current_submessage = "Invalid row number. Choose a new action (P/F)."
+                            mode = None
 
                     # end loop if there's a winner
                     elif mode == "game_over":
