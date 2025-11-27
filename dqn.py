@@ -16,15 +16,21 @@ class DQN(nn.Module):
         )
         
         self.fc = nn.Sequential(
-            nn.Linear(128 * 9 * 9, 1024),
+            nn.Linear(128 * 9 * 9 + 5, 1024),
             nn.ReLU(),
             nn.Linear(1024, 512),
             nn.ReLU(),
             nn.Linear(512, num_actions)
         )
 
-    def forward(self, x):
-        features = self.conv(x)
-        flat = features.reshape(x.size(0), -1)
-        q = self.fc(flat)
+    def forward(self, state, prev_move_onehot):
+
+        conv_out = self.conv(state)
+        conv_flat = conv_out.reshape(state.size(0), -1)
+
+        combined = torch.cat([conv_flat, prev_move_onehot], dim=1)
+
+        q = self.fc(combined)
+        
         return q
+

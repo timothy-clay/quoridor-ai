@@ -36,6 +36,8 @@ class Player:
         self.target_row = target_row if target_row is not None else self.gridSize - self.row - 1
 
         self.visited_counts = np.zeros(shape=(gridSize, gridSize))
+        self.prev_move = None
+        self.prev_move_onehot = np.zeros(5)
 
 
     def duplicate(self):
@@ -182,7 +184,7 @@ class Player:
         return 10 - len(self.fences)
     
 
-    def getShortestPath(self, grid, vfences=None, hfences=None):
+    def getShortestPath(self, grid, vfences=None, hfences=None, checkOpponent=True):
         """
         Run A* search to find the player's shortest path to their target row. The heuristic used for A* search 
         is the number of rows from the target.
@@ -220,13 +222,16 @@ class Player:
                     continue
 
                 ## DOUBLE COL AND ROW CHANGE IF THERE IS A PAWN THERE
-                if grid._isPawn(new_col, new_row):
-                    new_col = current_col + 2 * col_change
-                    new_row = current_row + 2 * row_change
-                    new_coords = (new_col, new_row)
+                if checkOpponent:
+                    if grid._validMove(current_col, current_row, col_change, row_change, vfences, hfences):
+                        if grid._isPawn(new_col, new_row):
+                            if grid._validMove(new_col, new_row, col_change, row_change, vfences, hfences):
+                                new_col = current_col + 2 * col_change
+                                new_row = current_row + 2 * row_change
+                                new_coords = (new_col, new_row)
 
-                if new_coords in visited_cells:
-                    continue
+                    if new_coords in visited_cells:
+                        continue
 
                 if grid._validMove(current_col, current_row, col_change, row_change, vfences, hfences):
                     new_distance = current_distance + 1
@@ -310,4 +315,19 @@ class Player:
             return False
         
         return True
+    
+    def updatePrevMove(self, command):
+        self.prev_move = command
+        if command in ['pw', 'ps', 'pa', 'pd']:
+            self.prev_move_onehot = np.array([1 if command==action else 0 for action in ['pw', 'ps', 'pa', 'pd', '']])
+        else:
+            self.prev_move_onehot = np.array([0, 0, 0, 0, 1])
+
+        return
+
+    def getPrevMove(self, onehot=False):
+        if onehot:
+            return self.prev_move_onehot
+        else:
+            return self.prev_move
     

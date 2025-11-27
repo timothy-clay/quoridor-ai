@@ -153,12 +153,10 @@ class Quoridor:
         The command "e" returns the current state of the game. 
         """
 
-        active_orig_path = self.active_player.getShortestPath(self.grid)
-        inactive_orig_path = self.inactive_player.getShortestPath(self.grid)
+        active_orig_path = self.active_player.getShortestPath(self.grid, checkOpponent=False)
+        inactive_orig_path = self.inactive_player.getShortestPath(self.grid, checkOpponent=False)
 
         prev_visits = 0
-        fence_penalty = 0
-        win_reward = 0
 
         # export current game state
         if command[0].lower() == 'e':
@@ -179,6 +177,8 @@ class Quoridor:
         # move pawn
         elif command[0].lower() == 'p':
 
+            prev_move = self.active_player.getPrevMove()
+
             # get direction and corresponding row/col changes
             direction = command[1].lower()
             col_change, row_change = DIRECTIONS[direction]
@@ -195,11 +195,13 @@ class Quoridor:
                     if self.active_player._canMove(self.grid, col_change * 2, row_change * 2):
                         prev_visits = self.active_player.getCellVisits(active_col + col_change, active_row + row_change)
                         self.active_player._movePawn(self.grid, col_change * 2, row_change * 2)
+                        self.active_player.updatePrevMove(command)
                 
                 # otherwise, move only 1 cell in the specified direction
                 else:
                     prev_visits = self.active_player.getCellVisits(active_col + col_change, active_row + row_change)
                     self.active_player._movePawn(self.grid, col_change, row_change)
+                    self.active_player.updatePrevMove(command)
 
         # place fence
         elif command[0].lower() == 'f':
@@ -213,15 +215,17 @@ class Quoridor:
             if self.active_player.getRemainingFences() > 0:
                 if self.active_player._canPlaceFence(self.grid, self.inactive_player, orientation, fence_col, fence_row):
                     self.active_player._placeFence(self.grid, orientation, fence_col, fence_row)
-                    fence_penalty = 1
+                    self.active_player.updatePrevMove(command)
 
-        active_path = self.active_player.getShortestPath(self.grid)
-        inactive_path = self.inactive_player.getShortestPath(self.grid)
+        active_path = self.active_player.getShortestPath(self.grid, checkOpponent=False)
+        inactive_path = self.inactive_player.getShortestPath(self.grid, checkOpponent=False)
+
+        reward = 0
 
         # check if there's a winner
         if self.active_player._checkWin():
             winner = self.active_player
-            win_reward = 1
+            reward += 15
 
         # swap turns if no winner
         else:
@@ -239,15 +243,30 @@ class Quoridor:
             'inactive_player': self.inactive_player
         }
 
-        reward = win_reward \
-            + 0.01 * (active_orig_path - active_path) \
-            - 0.01 * (inactive_orig_path - inactive_path) \
-            - 0.05 * fence_penalty \
-            - 0.01 * prev_visits
+        reward += 0.5 * (active_orig_path - active_path)
+        reward += 0.25 * (inactive_path - inactive_orig_path)
 
-        # ideas: penalize fence placements? penalize game length?
-        
-        # return the state of the board
+        if command[0].lower() == 'f':
+            reward += (inactive_path - inactive_orig_path) - 0.7 * (active_path - active_orig_path) - 1.0
+
+        if inactive_orig_path <= 2 and inactive_orig_path - inactive_path == 0 and winner is None:
+            reward -= (10 / inactive_orig_path)
+
+        if command == 'pw':
+            if prev_move == 'ps':
+                reward -= 1   
+        if command == 'ps':
+            if prev_move == 'pw':
+                reward -= 1    
+        if command == 'pa':
+            if prev_move == 'pd':
+                reward -= 1   
+        if command == 'pd':
+            if prev_move == 'pa':
+                reward -= 1   
+
+        reward += -0.01 * prev_visits
+
         return winner, self.grid, players, reward
     
 
@@ -295,6 +314,8 @@ class Quoridor:
         active_fences_remaining = np.ones((self.gridSize, self.gridSize)) * players['active_player'].getRemainingFences()
         opp_fences_remaining = np.ones((self.gridSize, self.gridSize)) * players['inactive_player'].getRemainingFences()
 
+        prev_move_onehot = players['active_player'].getPrevMove(onehot=True)
+
         # for FFN
         state = np.stack([
             hfences,
@@ -306,7 +327,7 @@ class Quoridor:
             opp_fences_remaining
         ], axis=0)
 
-        return state
+        return (state, prev_move_onehot)
 
     
     def _printMessage(self, screen, text, subtext, color):
@@ -525,6 +546,7 @@ class Quoridor:
                                 
                                 # move one cell
                                 else:
+
                                     self.active_player._movePawn(self.grid, col_change, row_change)
                                         # check winning condition
                                     if self.active_player._checkWin():
@@ -600,12 +622,15 @@ class Quoridor:
                                 else:
                                     self.current_message = self.active_player.getName()
                                     self.current_submessage = "Invalid fence placement. Choose a new action (P/F)."
+                                    mode = None
                             else:
                                 self.current_message = self.active_player.getName()
                                 self.current_submessage = "No remaining fences. Choose a new action (P/F)."
+                                mode = None
                         else:
                             self.current_message = self.active_player.getName()
                             self.current_submessage = "Invalid row number. Choose a new action (P/F)."
+                            mode = None
 
                     # end loop if there's a winner
                     elif mode == "game_over":

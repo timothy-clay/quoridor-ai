@@ -43,7 +43,7 @@ if __name__ == "__main__":
         print(q_values)
 
 
-        for candidate_id in np.argsort(q_values):
+        for candidate_id in np.argsort(q_values)[::-1]:
             valid_move = players['active_player'].checkMoveValidity(game, grid, players['inactive_player'], ALL_ACTIONS[candidate_id])
             if valid_move:
                 action_idx = candidate_id
