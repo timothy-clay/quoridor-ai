@@ -31,6 +31,8 @@ def run_single_game(depth=2, trained_agent=None):
 
     while winner is None:
         if minimax_turn:
+            depth = np.random.randint(1, depth + 1) # randomize depths to make games different
+            print('Minimax depth: ', depth)
             val, best_move = minimax(
                 game,
                 winner, grid, players, reward,
@@ -86,4 +88,4 @@ def evaluate_many_games(depth, num_game):
 
 
 if __name__ == "__main__":
-    evaluate_many_games(depth=2, num_game=100)
+    evaluate_many_games(depth=3, num_game=100)
