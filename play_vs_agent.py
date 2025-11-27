@@ -27,8 +27,9 @@ def play_vs_minimax(game, depth=2):
 
         if winner is not None:
             terminate_sequence()
+            break
         
-        score, best_move = minimax(game, winner, grid, players, depth=depth, alpha=float('-inf'), beta=float('inf'))
+        score, best_move = minimax_epsilon_greedy(game, winner, grid, players, depth=depth, alpha=float('-inf'), beta=float('inf'))
         winner, grid, players, reward = game.execute(best_move)
         game._refresh()
 
@@ -54,6 +55,7 @@ def play_vs_dqn(game):
         
         if winner is not None:
             terminate_sequence()
+            break
         
         state, prev_move_onehot = game.getState(grid, players)
 
@@ -85,12 +87,15 @@ def dqn_vs_minimax(game, depth=2):
 
     while winner is None:
 
-        score, best_move = minimax(game, winner, grid, players, depth=depth, alpha=float('-inf'), beta=float('inf'))
+        score, best_move = minimax_epsilon_greedy(game, winner, grid, players, depth=depth, alpha=float('-inf'), beta=float('inf'))
         winner, grid, players, reward = game.execute(best_move)
         game._refresh()
+
+        print(best_move)
         
         if winner is not None:
             terminate_sequence()
+            break
         
         state, prev_move_onehot = game.getState(grid, players)
 
@@ -107,8 +112,21 @@ def dqn_vs_minimax(game, depth=2):
         winner, grid, players, reward = game.execute(ALL_ACTIONS[action_idx])
         game._refresh()
 
+        print(ALL_ACTIONS[action_idx])
+
         if winner is not None:
             terminate_sequence()
+
+
+def minimax_vs_baseline():
+    # TODO: complete this function
+    # store win rates, average fence usage
+    pass
+
+def dqn_vs_baseline():
+    # TODO: complete this function
+    # store win rates, average fence usage
+    pass
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 from quoridor import *
 import numpy as np
+import random
 
 def heuristic(players, grid):
 
@@ -12,7 +13,39 @@ def heuristic(players, grid):
     player1_win = 10 * int(player1.row == player1.target_row)
     player2_win = 10 * int(player2.row == player2.target_row)
 
-    return player1_win + player2_path - player1_path - player2_win # player 1 wants to maximize, player 2 wants to minimize
+    # avoid oscillations
+    player1_prev_visits = 0.1 * player1.getCellVisits(player1.col, player1.row)
+    player2_prev_visits = 0.1 * player2.getCellVisits(player2.col, player2.row)
+
+    return player1_win - player1_path - player1_prev_visits - player2_win + player2_path + player2_prev_visits # player 1 wants to maximize, player 2 wants to minimize
+
+
+def minimax_epsilon_greedy(game, winner, grid, players, depth, alpha, beta, epsilon=0.05):
+
+    if np.random.random() < epsilon:
+        
+        movement_actions = list(range(4))
+        fence_actions = list(range(4, len(ALL_ACTIONS)))
+
+        random.shuffle(movement_actions)
+        random.shuffle(fence_actions)
+
+        first_block = movement_actions + [fence_actions[0]]
+        random.shuffle(first_block)  
+
+        remaining_fences = fence_actions[1:]
+        random.shuffle(remaining_fences)
+
+        candidate_actions = first_block + remaining_fences
+
+        for candidate_action in candidate_actions:
+            if players['active_player'].checkMoveValidity(game, grid, players['inactive_player'], ALL_ACTIONS[candidate_action]):
+                return 0, ALL_ACTIONS[candidate_action]
+    
+    else:
+        return minimax(game, winner, grid, players, depth, alpha, beta)
+        
+    return None
 
 
 

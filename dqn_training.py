@@ -1,5 +1,6 @@
 from quoridor import *
 from dqn import * 
+from minimax import *
 import numpy as np
 import torch
 import torch.optim as optim
@@ -45,7 +46,7 @@ def epsilon_greedy(dqn, grid, players, game, epsilon, device, verbose=False):
 
         candidate_actions = first_block + remaining_fences
     
-    else:
+    elif np.random.random() < 0.5:
         s_tensor = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
         pmo_tensor = torch.tensor(prev_move_onehot, dtype=torch.float32, device=device).unsqueeze(0)
         q_values = dqn(s_tensor, pmo_tensor)[0].detach().cpu().numpy()
@@ -53,6 +54,10 @@ def epsilon_greedy(dqn, grid, players, game, epsilon, device, verbose=False):
 
         if verbose:
             print(f'pw: {q_values[0]:.2f} | ps: {q_values[1]:.2f} | pa: {q_values[2]:.2f} | pd: {q_values[3]:.2f} | f: {np.max(q_values[4:]):.2f}')
+    
+    else:
+        _, best_move = minimax(game, None, grid, players, depth=2, alpha=float('-inf'), beta=float('inf'))
+        candidate_actions = [ALL_ACTIONS.index(best_move)]
 
     for candidate_action in candidate_actions:
         if players['active_player'].checkMoveValidity(game, grid, players['inactive_player'], ALL_ACTIONS[candidate_action]):
