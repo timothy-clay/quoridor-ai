@@ -90,5 +90,5 @@ if __name__=='__main__':
     current_idx = 0
 
     while winner is None:
-        winner, grid, players, reward = agents[current_idx].takeTurn()
+        winner, grid, players, reward, taken_action = agents[current_idx].takeTurn()
         current_idx = 1 - current_idx
