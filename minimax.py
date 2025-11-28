@@ -4,26 +4,32 @@ import random
 
 def heuristic(players, grid):
 
-    player1 = players['player1']
-    player2 = players['player2']
+    p1 = players['player1']
+    p2 = players['player2']
 
-    player1_path = player1.getShortestPath(grid)
-    player2_path = player2.getShortestPath(grid)
+    p1_path = p1.getShortestPath(grid)
+    p2_path = p2.getShortestPath(grid)
 
-    player1_win = 10 * int(player1.row == player1.target_row)
-    player2_win = 10 * int(player2.row == player2.target_row)
+    p1_win = 10 * int(p1.row == p1.target_row)
+    p2_win = 10 * int(p2.row == p2.target_row)
+
+    p1_fences = 0.5 * p1.getRemainingFences()
+    p2_fences = 0.5 * p2.getRemainingFences()
 
     # avoid oscillations
-    player1_prev_visits = 0.1 * player1.getCellVisits(player1.col, player1.row)
-    player2_prev_visits = 0.1 * player2.getCellVisits(player2.col, player2.row)
+    p1_prev_visits = 0.1 * p1.getCellVisits(p1.col, p1.row)
+    p2_prev_visits = 0.1 * p2.getCellVisits(p2.col, p2.row)
 
-    return player1_win - player1_path - player1_prev_visits - player2_win + player2_path + player2_prev_visits # player 1 wants to maximize, player 2 wants to minimize
+    p1_score = p1_win - p1_path - p1_prev_visits + p1_fences
+    p2_score = p2_win - p2_path - p2_prev_visits + p2_fences
+
+    return p1_score - p2_score # player 1 wants to maximize, player 2 wants to minimize
 
 
 def minimax_epsilon_greedy(game, winner, grid, players, depth, alpha, beta, epsilon=0.05):
 
     if np.random.random() < epsilon:
-        
+
         movement_actions = list(range(4))
         fence_actions = list(range(4, len(ALL_ACTIONS)))
 
