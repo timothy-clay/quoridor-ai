@@ -17,8 +17,8 @@ def heuristic(players, grid):
     p2_fences = 0.5 * p2.getRemainingFences()
 
     # avoid oscillations
-    p1_prev_visits = 0.1 * p1.getCellVisits(p1.col, p1.row)
-    p2_prev_visits = 0.1 * p2.getCellVisits(p2.col, p2.row)
+    p1_prev_visits = 0.5 * p1.getCellVisits(p1.col, p1.row)
+    p2_prev_visits = 0.5 * p2.getCellVisits(p2.col, p2.row)
 
     p1_score = p1_win - p1_path - p1_prev_visits + p1_fences
     p2_score = p2_win - p2_path - p2_prev_visits + p2_fences

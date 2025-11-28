@@ -446,31 +446,33 @@ class Quoridor:
         """
         Reset the state of the game visually, usually after an update to the game state has been made. 
         """
+
+        if self.GUI:
         
-        # re-draw the screen, the grid, and the remaining fences for each player
-        self.screen.fill(self.white)
-        self._drawGrid(self.screen)
-        self._drawPlayerFences(self.screen, self.player1, self.player2)
+            # re-draw the screen, the grid, and the remaining fences for each player
+            self.screen.fill(self.white)
+            self._drawGrid(self.screen)
+            self._drawPlayerFences(self.screen, self.player1, self.player2)
 
-        # print the current message to the screen if needed
-        if self.print_messages:
-            self._printMessage(self.screen, self.current_message, self.current_submessage, self.black)
+            # print the current message to the screen if needed
+            if self.print_messages:
+                self._printMessage(self.screen, self.current_message, self.current_submessage, self.black)
 
-        # draw the pawns for each player
-        self._drawPawn(self.screen, self.player1)
-        self._drawPawn(self.screen, self.player2)
+            # draw the pawns for each player
+            self._drawPawn(self.screen, self.player1)
+            self._drawPawn(self.screen, self.player2)
 
-        # draw each placed fence for player 1
-        for fence in self.player1.getFences():
-            self._drawFence(self.screen, fence)
+            # draw each placed fence for player 1
+            for fence in self.player1.getFences():
+                self._drawFence(self.screen, fence)
 
-        # draw each placed fence for player
-        for fence in self.player2.getFences():
-            self._drawFence(self.screen, fence)
-        
-        pygame.display.flip()
-        self.clock.tick(self.fps)
-        time.sleep(self.sleeptime)  
+            # draw each placed fence for player
+            for fence in self.player2.getFences():
+                self._drawFence(self.screen, fence)
+            
+            pygame.display.flip()
+            self.clock.tick(self.fps)
+            time.sleep(self.sleeptime)  
 
     def _loop_gui(self):
         """

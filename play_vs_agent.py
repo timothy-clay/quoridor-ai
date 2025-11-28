@@ -118,17 +118,6 @@ def dqn_vs_minimax(game, depth=2):
             terminate_sequence()
 
 
-def minimax_vs_baseline():
-    # TODO: complete this function
-    # store win rates, average fence usage
-    pass
-
-def dqn_vs_baseline():
-    # TODO: complete this function
-    # store win rates, average fence usage
-    pass
-
-
 if __name__ == "__main__":
 
     game = Quoridor(True, print_messages = True, sleep=0.1, gs=9)

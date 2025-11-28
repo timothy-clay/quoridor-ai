@@ -1,4 +1,7 @@
 scratch.ipynb
 p1_policy_1.pth
 p2_policy_1.pth
+dqn_vs_baseline.json
+minimax_vs_baseline.json
+dqn_vs_minimax.json
 test.py
