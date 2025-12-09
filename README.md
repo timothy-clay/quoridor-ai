@@ -6,6 +6,27 @@ Presentation Slides: https://docs.google.com/presentation/d/1ht1_yU8qKHoT-HI3Q_t
 
 Final Report: https://docs.google.com/document/d/1Q4xvP06P6Xvs-cEoUP_RhAA6qIq2qXbyuLGsWCSJV6k/edit?usp=sharing
 
+## Requirements
+To run this repo, these installations are required:
+torch~=2.9.1
+numpy~=1.26.3
+tqdm~=4.66.2
+pygame~=2.6.1
+
+### Installations
+1. Clone this repo, run in terminal:
+```
+git clone https://github.com/timothy-clay/quoridor-ai.git
+```
+2. Go to project directory:
+```
+cd <your-project-directory>
+```
+3. Install the dependencies from requirements.txt
+```
+pip install -r requirements.txt
+```
+
 ## Descriptions
 In this repo, we have implemented the gameplay for quoridor, AI agents to play the game using Minimax and DQN, and
 evaluations for the agents
