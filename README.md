@@ -4,6 +4,7 @@ by Timothy Clay, Kim-Cuong Tran Dang, Carrie Wang, and Phineas Wormser
 
 ## Requirements
 To run this repo, the following installations are required:
+
 - torch~=2.9.1
 - numpy~=1.26.3
 - tqdm~=4.66.2
@@ -33,12 +34,19 @@ evaluations for the agents
 - play_vs_agent.py: set up gameplay for human player v.s. Minimax or DQN agents, or Minimax v.s. DQN agent (with GUI)
 - eval.py: pit DQN v.s. Minimax agent, Minimax v.s. Baseline, DQN v.s. Baseline for input number of games (no GUI)
 
-To execute DQN v.s Minimax agent (depth 2) with GUI, run in terminal:
+To play a game of Quoridor (where you control both players), run in terminal:
 ```
-python3 play_vs_agent.py
+python quoridor.py
 ```
 
-To execute agent evaluations, run in terminal:
+To play a game of Quoridor against a DQN player (with you as Player 1), run in terminal:
 ```
-python3 eval.py
+python play_vs_agent.py
 ```
+To instead play as Player 1 or play against a minimax opponent, edit the play_vs_agent.py file accordingly (uncomment the relevant lines in main). 
+
+To re-execute our agent evaluations, run in terminal:
+```
+python eval.py
+```
+NOTE: this will likely take upwards of 1.5 hours to run
