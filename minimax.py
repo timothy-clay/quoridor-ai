@@ -7,8 +7,9 @@ def heuristic(players, grid):
     p1 = players['player1']
     p2 = players['player2']
 
-    p1_path = p1.getShortestPath(grid)
-    p2_path = p2.getShortestPath(grid)
+    # manhattan distance instead of A*
+    p1_approx_dist = abs(p1.row - p1.target_row)
+    p2_approx_dist = abs(p2.row - p2.target_row)
 
     p1_win = 10 * int(p1.row == p1.target_row)
     p2_win = 10 * int(p2.row == p2.target_row)
@@ -20,8 +21,8 @@ def heuristic(players, grid):
     p1_prev_visits = 0.5 * p1.getCellVisits(p1.col, p1.row)
     p2_prev_visits = 0.5 * p2.getCellVisits(p2.col, p2.row)
 
-    p1_score = p1_win - p1_path - p1_prev_visits + p1_fences
-    p2_score = p2_win - p2_path - p2_prev_visits + p2_fences
+    p1_score = p1_win - p1_approx_dist - p1_prev_visits + p1_fences
+    p2_score = p2_win - p2_approx_dist - p2_prev_visits + p2_fences
 
     return p1_score - p2_score # player 1 wants to maximize, player 2 wants to minimize
 
