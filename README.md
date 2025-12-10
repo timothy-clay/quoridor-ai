@@ -3,11 +3,11 @@ CS4100 Final Project
 by Timothy Clay, Kim-Cuong Tran Dang, Carrie Wang, and Phineas Wormser
 
 ## Requirements
-To run this repo, these installations are required:
-torch~=2.9.1
-numpy~=1.26.3
-tqdm~=4.66.2
-pygame~=2.6.1
+To run this repo, the following installations are required:
+- torch~=2.9.1
+- numpy~=1.26.3
+- tqdm~=4.66.2
+- pygame~=2.6.1
 
 ### Installations
 1. Clone this repo, run in terminal:
