@@ -34,9 +34,8 @@ evaluations for the agents
 - play_vs_agent.py: set up gameplay for human player v.s. Minimax or DQN agents, or Minimax v.s. DQN agent (with GUI)
 - eval.py: pit DQN v.s. Minimax agent, Minimax v.s. Baseline, DQN v.s. Baseline for input number of games (no GUI)
 
-To play a game of Quoridor (where you control both players), run in terminal:
-```
-python quoridor.py
+## Functionality
+- To play a game of Quoridor (where you control both players), run the following script in the terminal `python quoridor.py`
 ```
 
 
