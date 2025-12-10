@@ -35,21 +35,8 @@ evaluations for the agents
 - eval.py: pit DQN v.s. Minimax agent, Minimax v.s. Baseline, DQN v.s. Baseline for input number of games (no GUI)
 
 ## Functionality
-- To play a game of Quoridor (where you control both players), run the following script in the terminal `python quoridor.py`
-```
-
-
-
-To play a game of Quoridor against a DQN player (with you as Player 1), run in terminal:
-```
-python play_vs_agent.py
-```
-To instead play as Player 1 or play against a minimax opponent, edit the play_vs_agent.py file accordingly (uncomment the relevant lines in main). 
-
-
-
-To re-execute our agent evaluations, run in terminal:
-```
-python eval.py
-```
-NOTE: this will likely take upwards of 1.5 hours to run
+- To play a game of Quoridor (where you control both players), run the following script in the terminal: `python quoridor.py`
+- To play a game of Quoridor against a DQN player (with you as Player 1), run the following script in the terminal: `python play_vs_agent.py`
+  - To instead play as Player 1 or play against a minimax opponent, edit the play_vs_agent.py file accordingly (uncomment the relevant lines in main).
+- To re-execute our agent evaluations, run the following script in the terminal: `python eval.py`
+  - NOTE: this will likely take upwards of 1.5 hours to run
