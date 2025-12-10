@@ -25,7 +25,7 @@ pip install -r requirements.txt
 ```
 
 ## Descriptions
-This repo contains code to create an implementation of Quoridor from scratch, build and train minimax and DQN agents to intelligently play Quoridor, and evaluate their performance against human players and other agents. The following outline the contents of each individual file:
+This repository contains code to create an implementation of Quoridor from scratch, build and train minimax and DQN agents to intelligently play Quoridor, and evaluate their performance against human players and other agents. The following outline the contents of each individual file:
 - Game Implementation
   - `quoridor.py`: contains main implementation of the game and several helper functions related to the game and game state
   - `grid.py`: contains a grid class that manages everything that happens on the grid of the board (like fence placements)
