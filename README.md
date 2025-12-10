@@ -39,11 +39,15 @@ To play a game of Quoridor (where you control both players), run in terminal:
 python quoridor.py
 ```
 
+
+
 To play a game of Quoridor against a DQN player (with you as Player 1), run in terminal:
 ```
 python play_vs_agent.py
 ```
 To instead play as Player 1 or play against a minimax opponent, edit the play_vs_agent.py file accordingly (uncomment the relevant lines in main). 
+
+
 
 To re-execute our agent evaluations, run in terminal:
 ```
