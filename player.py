@@ -35,6 +35,7 @@ class Player:
         self.fences = fences if fences is not None else set()
         self.target_row = target_row if target_row is not None else self.gridSize - self.row - 1
 
+        # store number of cell visits and the previous move, both as a string and as a vector
         self.visited_counts = np.zeros(shape=(gridSize, gridSize))
         self.prev_move = None
         self.prev_move_onehot = np.zeros(5)
@@ -137,15 +138,24 @@ class Player:
     
     
     def _update_counts(self, col, row):
+        """
+        Updates the number of times a player has visited a cell.
+        """
         self.visited_counts[row, col] += 1
         return
     
     
     def getCellVisits(self, col, row):
+        """
+        Get the number of times a player has visited a specific cell. 
+        """
         return self.visited_counts[row, col]
     
 
     def getVisitedCounts(self):
+        """
+        Get the array storing the number of times a player has visited each cell. 
+        """
         return self.visited_counts
     
 
@@ -259,10 +269,9 @@ class Player:
         # update the pawn location in the grid object
         grid._movePawn(self.col, self.row, col_change, row_change)
 
-        # update coordinates
+        # update coordinates and previous visit counts
         self.col += col_change
         self.row += row_change
-
         self._update_counts(self.col, self.row)
 
         return
@@ -316,8 +325,16 @@ class Player:
         
         return True
     
+
     def updatePrevMove(self, command):
+        """
+        Update the prev_move and prev_move_onehot values for the player, given a taken command.
+        """
+
+        # store command directly
         self.prev_move = command
+
+        # store one-hot array
         if command in ['pw', 'ps', 'pa', 'pd']:
             self.prev_move_onehot = np.array([1 if command==action else 0 for action in ['pw', 'ps', 'pa', 'pd', '']])
         else:
@@ -325,7 +342,11 @@ class Player:
 
         return
 
+
     def getPrevMove(self, onehot=False):
+        """
+        Get the previous move that the player took, either as a one-hot vector or as a string. 
+        """
         if onehot:
             return self.prev_move_onehot
         else:

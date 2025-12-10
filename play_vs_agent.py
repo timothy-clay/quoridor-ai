@@ -1,10 +1,14 @@
 from quoridor import *
 from dqn import *
 from minimax import *
+from agents import *
 import numpy as np
 import torch
 
 def terminate_sequence():
+    """
+    Defines behavior to wait to quit PyGame until user presses another button. 
+    """
     terminate = False
     while not terminate:
         for event in pygame.event.get():
@@ -12,113 +16,49 @@ def terminate_sequence():
                 terminate = True
 
 
-def play_vs_minimax(game, depth=2):
+def play_vs_agent(game, player=1, opponent='DQN', depth=2):
+    """
+    Allows the user to play as a specified player against either a DQN opponent or a minimax opponent of specified depth. 
+    """
 
+    # create agent player
+    if opponent == 'DQN':
+        agent = DQNAgent(game, player_id=3-player)
+    elif opponent == 'Minimax':
+        agent = MinimaxAgent(game, player_id=3-player, depth=depth)
+    else:
+        raise ValueError
+
+    # get game state
     winner, grid, players, reward = game.execute('e')
 
-    winner = None
+    # declare starting player
+    active = 0 if player ==1 else 1
 
+    # loop until game is over
     while winner is None:
 
-        game._iter_gui()
+        # user turn
+        if active == 0:
+            game._iter_gui()
+            winner, grid, players, reward = game.execute('e')
 
-        winner, grid, players, reward = game.execute('e')
-        game._refresh()
-
-        if winner is not None:
-            terminate_sequence()
-            break
+        # minimax turn
+        if active == 1:
+            winner, grid, players, reward, taken_action = agent.takeTurn()
         
-        score, best_move = minimax_epsilon_greedy(game, winner, grid, players, depth=depth, alpha=float('-inf'), beta=float('inf'))
-        winner, grid, players, reward = game.execute(best_move)
+        # refresh GUI
         game._refresh()
 
+        # wait until user key press to quit PyGame
         if winner is not None:
             terminate_sequence()
 
+        # change turns
+        active = 1 - active
 
-def play_vs_dqn(game):
-
-    winner, grid, players, reward = game.execute('e')
-
-    n_actions = game.num_actions
-
-    trained_agent = DQN(n_actions)
-    trained_agent.load_state_dict(torch.load('quoridor_dqn.pth'))
-
-    while winner is None:
-
-        game._iter_gui()
-
-        winner, grid, players, reward = game.execute('e')
-        game._refresh()
-        
-        if winner is not None:
-            terminate_sequence()
-            break
-        
-        state, prev_move_onehot = game.getState(grid, players)
-
-        s_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
-        pmo_tensor = torch.tensor(prev_move_onehot, dtype=torch.float32).unsqueeze(0)
-        q_values = trained_agent(s_tensor, pmo_tensor)[0].detach().cpu().numpy()
-
-        for candidate_id in np.argsort(q_values)[::-1]:
-            valid_move = players['active_player'].checkMoveValidity(game, grid, players['inactive_player'], ALL_ACTIONS[candidate_id])
-            if valid_move:
-                action_idx = candidate_id
-                break
-
-        winner, grid, players, reward = game.execute(ALL_ACTIONS[action_idx])
-        game._refresh()
-
-        if winner is not None:
-            terminate_sequence()
-
-
-def dqn_vs_minimax(game, depth=2):
-
-    winner, grid, players, reward = game.execute('e')
-
-    n_actions = game.num_actions
-
-    trained_agent = DQN(n_actions)
-    trained_agent.load_state_dict(torch.load('quoridor_dqn.pth'))
-
-    while winner is None:
-
-        score, best_move = minimax_epsilon_greedy(game, winner, grid, players, depth=depth, alpha=float('-inf'), beta=float('inf'))
-        winner, grid, players, reward = game.execute(best_move)
-        game._refresh()
-
-        print(best_move)
-        
-        if winner is not None:
-            terminate_sequence()
-            break
-        
-        state, prev_move_onehot = game.getState(grid, players)
-
-        s_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
-        pmo_tensor = torch.tensor(prev_move_onehot, dtype=torch.float32).unsqueeze(0)
-        q_values = trained_agent(s_tensor, pmo_tensor)[0].detach().cpu().numpy()
-
-        for candidate_id in np.argsort(q_values)[::-1]:
-            valid_move = players['active_player'].checkMoveValidity(game, grid, players['inactive_player'], ALL_ACTIONS[candidate_id])
-            if valid_move:
-                action_idx = candidate_id
-                break
-
-        winner, grid, players, reward = game.execute(ALL_ACTIONS[action_idx])
-        game._refresh()
-
-        print(ALL_ACTIONS[action_idx])
-
-        if winner is not None:
-            terminate_sequence()
 
 
 if __name__ == "__main__":
-
     game = Quoridor(True, print_messages = True, sleep=0.1, gs=9)
-    dqn_vs_minimax(game)
+    play_vs_agent(game, player=2, opponent='DQN')

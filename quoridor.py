@@ -152,9 +152,11 @@ class Quoridor:
         The command "e" returns the current state of the game. 
         """
 
+        # get distance from goal for both players
         active_orig_path = self.active_player.getShortestPath(self.grid, checkOpponent=False)
         inactive_orig_path = self.inactive_player.getShortestPath(self.grid, checkOpponent=False)
 
+        # initialize number of previous visits, in case not overwritten
         prev_visits = 0
 
         # export current game state
@@ -216,12 +218,14 @@ class Quoridor:
                     self.active_player._placeFence(self.grid, orientation, fence_col, fence_row)
                     self.active_player.updatePrevMove(command)
 
+        # get distance to goal for both players after the move
         active_path = self.active_player.getShortestPath(self.grid, checkOpponent=False)
         inactive_path = self.inactive_player.getShortestPath(self.grid, checkOpponent=False)
 
+        # initialize reward
         reward = 0
 
-        # check if there's a winner
+        # check if there's a winner and reward accordingly
         if self.active_player._checkWin():
             winner = self.active_player
             reward += 15
@@ -235,6 +239,7 @@ class Quoridor:
         if self.GUI:
             self._refresh()
 
+        # store individual players
         players = {
             'player1':self.player1, 
             'player2':self.player2, 
@@ -242,29 +247,29 @@ class Quoridor:
             'inactive_player': self.inactive_player
         }
 
-        reward += 0.5 * (active_orig_path - active_path)
-        reward += 0.25 * (inactive_path - inactive_orig_path)
+        # update reward for own path difference
+        reward -= 1.2 * (active_path - active_orig_path)
 
+        # update reward for fence placement
         if command[0].lower() == 'f':
-            reward += (inactive_path - inactive_orig_path) - 0.7 * (active_path - active_orig_path) - 1.0
+            reward += 1.25 * (inactive_path - inactive_orig_path) - 2.0
 
+        # penalize player for not blocking opponent when they're <=2 moves away from winning
         if inactive_orig_path <= 2 and inactive_orig_path - inactive_path == 0 and winner is None:
             reward -= (10 / inactive_orig_path)
 
-        if command == 'pw':
-            if prev_move == 'ps':
+        # apply penalty for redundant move
+        if command == 'pw' and prev_move == 'ps':
                 reward -= 1   
-        if command == 'ps':
-            if prev_move == 'pw':
+        if command == 'ps' and prev_move == 'pw':
                 reward -= 1    
-        if command == 'pa':
-            if prev_move == 'pd':
+        if command == 'pa' and prev_move == 'pd':
                 reward -= 1   
-        if command == 'pd':
-            if prev_move == 'pa':
+        if command == 'pd' and prev_move == 'pa':
                 reward -= 1   
 
-        reward += -0.01 * prev_visits
+        # apply penalty for repeat visits
+        reward += -0.1 * prev_visits
 
         return winner, self.grid, players, reward
     
@@ -279,6 +284,7 @@ class Quoridor:
         y_pixels = int(y * self.cellSize + self.cellSize / 2 + self.margin * self.title_ratio)
 
         return x_pixels, y_pixels
+    
     
     def getFencePixels(self, x, y, orientation):
         """
@@ -297,25 +303,37 @@ class Quoridor:
 
         return x_pixels, y_pixels
     
+    
     def getState(self, grid, players):
+        """
+        Get the current state of the game for use in reinforcement learning. 
+        """
+
+        # get the current fence locations
         hfences = grid.getHFences()
         vfences = grid.getVFences()
+
+        # get the number of times each cell has been visited by the current player
         visited_cells = players['active_player'].getVisitedCounts()
 
+        # get the current player location
         active_col, active_row = players['active_player'].getCoords()
         active_loc = np.zeros((self.gridSize, self.gridSize))
         active_loc[active_row, active_col] = 1
 
+        # get the opposing player location
         opp_col, opp_row = players['inactive_player'].getCoords()
         opp_loc = np.zeros((self.gridSize, self.gridSize))
         opp_loc[opp_row, opp_col] = 1
 
+        # get the number of fences for both players (cast to a full 9x9 array)
         active_fences_remaining = np.ones((self.gridSize, self.gridSize)) * players['active_player'].getRemainingFences()
         opp_fences_remaining = np.ones((self.gridSize, self.gridSize)) * players['inactive_player'].getRemainingFences()
 
+        # gets the one-hot representation of the active player's most recent move
         prev_move_onehot = players['active_player'].getPrevMove(onehot=True)
 
-        # for FFN
+        # combines the individual arrays into one 9x9x7 array
         state = np.stack([
             hfences,
             vfences,
@@ -326,6 +344,7 @@ class Quoridor:
             opp_fences_remaining
         ], axis=0)
 
+        # return both the state and the one-hot previous move representation
         return (state, prev_move_onehot)
 
     
@@ -387,6 +406,7 @@ class Quoridor:
                 pygame.draw.rect(screen, self.white, rect, 2)
 
         return
+    
 
     def _drawPawn(self, screen, player):
         """
@@ -403,6 +423,7 @@ class Quoridor:
         gfxdraw.filled_circle(screen, x_pixels, y_pixels, radius, player.getColor())
 
         return
+    
     
     def _drawFence(self, screen, fence):
         """
@@ -424,6 +445,7 @@ class Quoridor:
             pygame.draw.rect(screen, fence.getColor(), rect)
 
         return
+    
 
     def _drawPlayerFences(self, screen, player1, player2):
         """
@@ -441,6 +463,7 @@ class Quoridor:
             pygame.draw.rect(screen, player2.getColor(), rect, 4)
 
         return
+    
 
     def _refresh(self):
         """
@@ -473,6 +496,7 @@ class Quoridor:
             pygame.display.flip()
             self.clock.tick(self.fps)
             time.sleep(self.sleeptime)  
+
 
     def _loop_gui(self):
         """
@@ -642,9 +666,10 @@ class Quoridor:
 
         pygame.quit()
 
+
     def _iter_gui(self):
         """
-        Game logic loop for playing the game via the keyboard. 
+        Game logic loop for playing one turn of the game via the keyboard. 
         """
 
         # store the mode (e.g., pawn placement, fence placement, etc.) entered by the previous button press
@@ -812,8 +837,10 @@ class Quoridor:
             pygame.display.flip()
             self.clock.tick(self.fps)
 
+
     def _main(self):
         self._loop_gui()
+
 
 if __name__ == "__main__":
     game = Quoridor(True, print_messages = True, sleep=0.1, gs=9)
